@@ -1,0 +1,38 @@
+Package: BASS
+Title: Bayesian Analytics for Spatial Segmentation
+Version: 1.0
+Date: 2021-09-20
+Authors@R: c(
+    person("Zheng", "Li", role = c("aut", "cre"), email = "zlisph@umich.edu"),
+    person("Xiang", "Zhou", role = c("aut")))
+Description: BASS is a computational method that performs transcriptomic 
+    analysis at two different scales. At the single-cell scale, BASS performs 
+    cell type clustering and clusters cells into multiple cell types. At the 
+    tissue regional scale, BASS segments tissues into tissue structures in a 
+    de novo fashion and characterizes the cell type composition in each 
+    detected tissue region separately. The analyses at the two different 
+    resolutions are performed in a coherent way through a Bayesian hierarchical 
+    model, which allows us to seamlessly integrate gene expression information 
+    with spatial information to improve analyses at both resolutions.
+Depends: 
+    R (>= 4.0.3),
+    GIGrvg,
+    mclust
+License: GPL (>= 2)
+Imports: 
+    Rcpp (>= 1.0.5),
+    RcppArmadillo (>= 0.10.1.2.0),
+    GIGrvg (>= 0.5),
+    label.switching (>= 1.8),
+    mclust (>= 5.4.7),
+    ggplot2 (>= 3.3.4),
+    dplyr (>= 1.0.2),
+    cowplot (>= 1.1.0),
+    gghighlight (>= 0.3.1),
+    scales (>= 1.1.1)
+biocViews:
+    scran (>= 1.18.3)
+LinkingTo: 
+    Rcpp,
+    RcppArmadillo
+RoxygenNote: 7.1.1
