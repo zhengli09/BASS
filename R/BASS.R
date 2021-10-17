@@ -270,31 +270,35 @@ BASS.postprocess <- function(BASS)
     z = t(BASS@res$c) + 1, K = BASS@C)
   z_ls <- label.switching::label.switching(method = c("ECR-ITERATIVE-1"),
     z = t(BASS@res$z) + 1, K = BASS@R)
-  
-  # 1.cell type proportion matrix
-  pi_est_ls <- label.switching::permute.mcmc(
-    aperm(BASS@res$pi, perm = c(3, 1, 2)), 
-    permutations = c_ls$permutations[[1]]
-    )$output # n x c x k
-  pi_est_ls <- label.switching::permute.mcmc(
-    aperm(pi_est_ls, perm = c(1, 3, 2)), 
-    permutations = z_ls$permutations[[1]]
-    )$output # n x k x c
-  pi_est_ls <- apply(aperm(pi_est_ls, perm = c(3, 2, 1)), 
-    MARGIN = c(1, 2), median) # C x R
-  
-  # 2.cell type labels
+
+  # 1.cell type labels
   idx_l <- c(0, cumsum(BASS@Ns))
   c_est_ls <- c_ls$clusters[1, ]
   c_est_ls <- lapply(1:BASS@L, function(l){
       c_est_ls[(idx_l[l]+1):idx_l[l+1]]
     })
 
-  # 3.tissue structure labels
+  # 2.tissue structure labels
   z_est_ls <- z_ls$clusters[1, ]
   z_est_ls <- lapply(1:BASS@L, function(l){
       z_est_ls[(idx_l[l]+1):idx_l[l+1]]
     })
+
+  # 3.cell type proportion matrix
+  # This approach is unstable and still suffers from
+  # label switching
+  # pi_est_ls <- label.switching::permute.mcmc(
+  #   aperm(BASS@res$pi, perm = c(3, 1, 2)), 
+  #   permutations = c_ls$permutations[[1]]
+  #   )$output # n x c x k
+  # pi_est_ls <- label.switching::permute.mcmc(
+  #   aperm(pi_est_ls, perm = c(1, 3, 2)), 
+  #   permutations = z_ls$permutations[[1]]
+  #   )$output # n x k x c
+  # pi_est_ls <- apply(aperm(pi_est_ls, perm = c(3, 2, 1)), 
+  #   MARGIN = c(1, 2), mean) # C x R
+  pi_est_ls <- table(unlist(c_est_ls), unlist(z_est_ls))
+  pi_est_ls <- pi_est_ls %*% diag(1 / apply(pi_est_ls, 2, sum))
 
   # 4.posterior density asumming beta is fixed
   logliks <- evalLik(BASS)
