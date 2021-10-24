@@ -11,24 +11,27 @@
 
 #include "compPartitionRatio.h"
 #include "GibbsFuncs.h"
-#include <RcppArmadillo.h>
-// [[Rcpp::depends(RcppArmadillo)]]
+#include <RcppDist.h>
 #include <string>
 using namespace std;
 using namespace Rcpp;
+// [[Rcpp::depends(RcppArmadillo, RcppDist)]]
 
 // [[Rcpp::export]]
 Rcpp::List Gibbs(
-  const Rcpp::NumericMatrix X, // N x J gene expression matrix
+  const Rcpp::NumericMatrix Xin, // N x J gene expression matrix
   Rcpp::NumericMatrix xy, // N x 2 coordinates
   const Rcpp::IntegerVector Ns, // L x 1 vector of sample sizes
   const int C, // number of cell types
   const int R, // number of spatial domains
   Rcpp::String initMethod, // initialization method for c and z
+  Rcpp::String covStruc, // covariance structure for expression features
   const double kappa, // prior parameter of gene expression (not used)
   const double alpha0, // concentration parameter of Dirichlet distribution
   const double a, // shape parameter of inverse gamma prior
   const double b, // scale parameter of inverse gamma prior
+  const Rcpp::NumericMatrix W0in, // scale matrix of Wishart prior
+  const int n0, // degrees of freedom of Wishart prior
   const int k, // number of neighbors for kNN graph
   const int warmUp, // number of burn-in iterations
   const int numSamples, // number of posterior samples
@@ -41,8 +44,10 @@ Rcpp::List Gibbs(
   const Rcpp::NumericMatrix NHC // number of homogeneous cliques under different beta
   )
 {
-  int N = X.nrow(); // total number of cells in L samples
-  int J = X.ncol(); // number of genes shared across L samples
+  arma::mat X = Rcpp::as<arma::mat>(Xin);
+  arma::mat W0inv = arma::inv(Rcpp::as<arma::mat>(W0in));
+  int N = X.n_rows; // total number of cells in L samples
+  int J = X.n_cols; // number of genes shared across L samples
   int L = Ns.length(); // number of samples
   Rcpp::IntegerVector smpIdx = Rcpp::cumsum(Ns);
   smpIdx.push_front(0);
@@ -52,8 +57,9 @@ Rcpp::List Gibbs(
   std::map<std::string, set<int>> U; // "sc" -> indeces of cells in spatial domain s and of cell type c
   std::vector<std::map<int, std::set<int>>> Vs; // L-vector of adjacency list for each sample
 
-  Rcpp::NumericMatrix mu(J, C); // J x C mean expression of gene j in cell type c
-  Rcpp::NumericMatrix sigma2(J, C); // J x C variance of expression of gene j in cell type c
+  arma::mat mu(J, C); // J x C mean parameter of expression feature
+  Rcpp::NumericMatrix sigma2(J, C); // J x C variance of expression of feature j in cell type c
+  arma::mat Sigmainv(J, J); // J x J covariance matrix (EEE model)
   Rcpp::NumericMatrix pi(C, R); // C x R probability of being cell type c in spatial domain r
   Rcpp::IntegerVector z(N); // N x 1 vector of spatial domain labels
   Rcpp::IntegerVector zl; // Ns x 1 vector of spatial domain labels (sub-vector of z)
@@ -61,9 +67,9 @@ Rcpp::List Gibbs(
   Rcpp::IntegerVector c(N); // N x 1 vector of cell types
   Rcpp::IntegerVector cl; // Ns x 1 vector of cell types (sub-vector of c)
   Rcpp::IntegerVector initC(N); // N x 1 vector of initial cell types from k-means
-  Rcpp::NumericVector lambda(J); // J x 1 vector of scaling factors of prior variance of mu
-  Rcpp::NumericVector d(J); // J x 1 vector of prior mean of mu
-  Rcpp::NumericVector R2(J); // J x 1 vector of squared range of each gene
+  arma::vec lambda(J); // J x 1 vector of scaling factors of prior variance of mu
+  arma::vec d(J); // J x 1 vector of prior mean of mu
+  arma::vec R2(J); // J x 1 vector of squared range of each gene
   double beta; // scalar, interaction paramter of Potts model
   double acceptBetaP = 0.0; // scalar, acceptance probability of beta
   bool isConverged = false; // convergence check of beta
@@ -71,12 +77,13 @@ Rcpp::List Gibbs(
   // posterior samples
   arma::cube posMu(J, C, numSamples, arma::fill::zeros); // posterior samples of mu
   arma::cube posSigma2(J, C, numSamples, arma::fill::zeros); // posterior samples of sigma2
+  arma::cube posSigma(J, J, numSamples, arma::fill::zeros); // posterior samples of Sigma
   arma::cube posPi(C, R, numSamples, arma::fill::zeros); // posterior samples of pi
   Rcpp::NumericMatrix posZ(N, numSamples); // posterior samples of spatial domains
   Rcpp::NumericMatrix posC(N, numSamples); // posterior samples of cell types 
   Rcpp::NumericVector burninBeta; // burn-in samples of beta for checking convergence
-  Rcpp::NumericMatrix posLambda(J, numSamples); // posterior samples of lambda
-  Rcpp::NumericMatrix posD(J, numSamples); // posterior samples of d
+  arma::mat posLambda(J, numSamples); // posterior samples of lambda
+  arma::mat posD(J, numSamples); // posterior samples of d
   Rcpp::NumericVector NHCs(L); // exponents of Potts kernel
 
   // parameter initialization
@@ -111,8 +118,8 @@ Rcpp::List Gibbs(
     int iter = 0;
     while(!isConverged)
     {
-      updateAll(X, L, alpha0, a, b, kappa, beta, R2, smpIdx, Vs, zl, cl,
-        pi, sigma2, mu, c, z, lambda, d, T, S, U);
+      updateAll(X, L, alpha0, covStruc, a, b, W0inv, n0, kappa, beta, R2, smpIdx,
+        Vs, zl, cl, pi, sigma2, Sigmainv, mu, c, z, lambda, d, T, S, U);
 
       if(betaEstApproach == "ACCUR_EST")
       {
@@ -147,8 +154,8 @@ Rcpp::List Gibbs(
       cout << "\rWarming up iteration: " << iter + 1 << "/" << warmUp << flush;
     }
     // update all parameters
-    updateAll(X, L, alpha0, a, b, kappa, beta, R2, smpIdx, Vs, zl, cl,
-      pi, sigma2, mu, c, z, lambda, d, T, S, U);
+    updateAll(X, L, alpha0, covStruc, a, b, W0inv, n0, kappa, beta, R2, smpIdx,
+      Vs, zl, cl, pi, sigma2, Sigmainv, mu, c, z, lambda, d, T, S, U);
   }
   cout << endl;
 
@@ -161,17 +168,24 @@ Rcpp::List Gibbs(
       cout << "\rSampling iteration: " << iter + 1 << "/" << numSamples << flush;
     }
     // update all parameters
-    updateAll(X, L, alpha0, a, b, kappa, beta, R2, smpIdx, Vs, zl, cl,
-      pi, sigma2, mu, c, z, lambda, d, T, S, U);
+    updateAll(X, L, alpha0, covStruc, a, b, W0inv, n0, kappa, beta, R2, smpIdx,
+      Vs, zl, cl, pi, sigma2, Sigmainv, mu, c, z, lambda, d, T, S, U);
 
     // posteriors
-    posMu.slice(iter) = Rcpp::as<arma::mat>(mu);
-    posSigma2.slice(iter) = Rcpp::as<arma::mat>(sigma2);
+    posMu.slice(iter) = mu;
+    if(covStruc == "EII")
+    {
+      posSigma2.slice(iter) = Rcpp::as<arma::mat>(sigma2);
+    }
+    else if(covStruc == "EEE")
+    {
+      posSigma.slice(iter) = arma::inv(Sigmainv);
+    }
     posPi.slice(iter) = Rcpp::as<arma::mat>(pi);
     posZ(_, iter) = z;
     posC(_, iter) = c;
-    posLambda(_, iter) = lambda;
-    posD(_, iter) = d;
+    posLambda.col(iter) = lambda;
+    posD.col(iter) = d;
   }
   cout << endl << "done" << endl;
 
@@ -184,6 +198,7 @@ Rcpp::List Gibbs(
   Rcpp::List res = Rcpp::List::create(
     _["mu"] = posMu, 
     _["sigma2"] = posSigma2, 
+    _["Sigma"] = posSigma,
     _["pi"] = posPi, 
     _["z"] = posZ, 
     _["init_z"] = initZ,

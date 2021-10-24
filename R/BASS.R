@@ -12,10 +12,13 @@
 #' @slot R Number of spatial domains
 #' @slot init_method Initialization method for both cell types and 
 #'  tissue structures
+#' @slot cov_struc Covariance structure for gene expression features
 #' @slot kappa Prior parameter of gene expression
 #' @slot alpha0 Concentration parameter of Dirichlet distribution
 #' @slot a Shape parameter of the inverse gamma prior
 #' @slot b Scale parameter of the inverse gamma prior
+#' @slot W0 W0*I represents the scale matrix of Wishart prior
+#' @slot n0 Degrees of freedom of Wishart prior
 #' @slot k Number of neighbors for kNN graph
 #' @slot burn_in Number of burn-in iterations
 #' @slot samples Number of posterior samples
@@ -38,10 +41,13 @@ setClass("BASS", slots = list(
   C = "numeric",
   R = "numeric",
   init_method = "character",
+  cov_struc = "character",
   kappa = "numeric",
   alpha0 = "numeric",
   a = "numeric",
   b = "numeric",
+  W0 = "numeric",
+  n0 = "numeric",
   k = "numeric",
   burn_in = "numeric",
   samples = "numeric",
@@ -61,10 +67,13 @@ setClass("BASS", slots = list(
 createBASSObject <- function(
   X, xy, C, R, 
   init_method = c("kmeans", "mclust"), 
+  cov_struc = c("EII", "EEE"),
   kappa = 0.01, 
   alpha0 = 1, 
   a = 2, 
   b = 1, 
+  W0 = 1,
+  n0 = 1,
   k = 4, 
   burn_in = 10000, 
   samples = 10000, 
@@ -115,10 +124,11 @@ createBASSObject <- function(
   # create object
   BASS <- new(Class = "BASS", 
     X = X, xy = xy, L = L, P = P, Ns = sapply(X, ncol), C = C, R = R,
-    init_method = init_method[1], kappa = kappa, alpha0 = alpha0, a = a, 
-    b = b, k = k, burn_in = burn_in, samples = samples,  beta = beta,
-    beta_est_approach = beta_est_approach[1], beta_max = beta_max, 
-    epsilon = epsilon, B = B, M = M
+    init_method = init_method[1], cov_struc = cov_struc[1], 
+    kappa = kappa, alpha0 = alpha0, a = a, b = b, W0 = W0, n0 = n0, 
+    k = k, burn_in = burn_in, samples = samples, 
+    beta_est_approach = beta_est_approach[1], 
+    beta = beta, beta_max = beta_max, epsilon = epsilon, B = B, M = M
     )
   rm(X)
   rm(xy)
@@ -144,6 +154,8 @@ showWelcomeMessage <- function(BASS)
   if(BASS@beta_est_approach == "FIXED"){
     cat("    - Potts interaction parameter:", BASS@beta, "\n")
   }
+  cat("    - Variance-covariance structure of gene expression features:",
+    BASS@cov_struc, "\n")
   cat("  To list all hyper-parameters, Type listAllHyper(BASS_object)\n")
   cat("***************************************\n")
 }
@@ -160,6 +172,18 @@ listAllHyper <- function(BASS)
   cat("    - Number of cell types C: ", BASS@C, "\n", sep = "")
   cat("    - Number of spatial domains R: ", BASS@R, "\n", sep = "")
   cat("    - Initialization method: ", BASS@init_method, "\n", sep = "")
+  cat("    - Covariance structure: ", BASS@cov_struc, "\n", sep = "")
+  if(BASS@cov_struc == "EII"){
+    cat("    - Shape parameter of the inverse gamma prior a: ", 
+      BASS@a, "\n", sep = "")
+    cat("    - Scale parameter of the inverse gamma prior b: ", 
+      BASS@b, "\n", sep = "")
+  } else if(BASS@cov_struc == "EEE"){
+    cat("    - Scale matrix of the Wishart prior W0: ", 
+      BASS@W0, "I", "\n", sep = "")
+    cat("    - Degrees of freedom of the Wishart prior n0: ", 
+      BASS@n0, "\n", sep = "")
+  }
   cat("    - MCMC burn-in samples: ", BASS@burn_in, "\n", sep = "")
   cat("    - MCMC posterior samples: ", BASS@samples, "\n", sep = "")
   cat("    - Potts interaction parameter estimation approach: ", 
@@ -177,10 +201,6 @@ listAllHyper <- function(BASS)
   cat("    - Upper bound for beta: ", BASS@beta_max, "\n", sep = "")
   cat("    - Concentration parameter of Dirichlet distribution alpha0: ", 
     BASS@alpha0, "\n", sep = "")
-  cat("    - Shape parameter of the inverse gamma prior a: ", 
-    BASS@a, "\n", sep = "")
-  cat("    - Scale parameter of the inverse gamma prior b: ", 
-    BASS@b, "\n", sep = "")
   cat("    - Number of neighbors for the kNN graph: ", 
     BASS@k, "\n", sep = "")
   cat("***************************************\n")
@@ -250,12 +270,14 @@ BASS.run <- function(BASS)
   }
 
   xy <- do.call(rbind, BASS@xy)
-  res <- Gibbs(X = BASS@X_run, xy = xy, Ns = BASS@Ns, C = BASS@C, R = BASS@R,
-    initMethod = BASS@init_method, kappa = BASS@kappa, alpha0 = BASS@alpha0, 
-    a = BASS@a, b = BASS@b, k = BASS@k, warmUp = BASS@burn_in, 
-    numSamples = BASS@samples, betaEstApproach = BASS@beta_est_approach,
-    betaIn = BASS@beta, betaMax = BASS@beta_max, epsilon = BASS@epsilon, 
-    M = BASS@M, B = BASS@B, NHC = NHC)
+  res <- Gibbs(Xin = BASS@X_run, xy = xy, Ns = BASS@Ns, C = BASS@C, R = BASS@R,
+    initMethod = BASS@init_method, covStruc = BASS@cov_struc, 
+    kappa = BASS@kappa, alpha0 = BASS@alpha0, a = BASS@a, b = BASS@b,
+    W0in = BASS@W0 * diag(ncol(BASS@X_run)), n0 = BASS@n0, k = BASS@k, 
+    warmUp = BASS@burn_in, numSamples = BASS@samples, 
+    betaEstApproach = BASS@beta_est_approach, betaIn = BASS@beta, 
+    betaMax = BASS@beta_max, epsilon = BASS@epsilon, M = BASS@M, 
+    B = BASS@B, NHC = NHC)
   BASS@res <- res
   return(BASS)
 }
@@ -343,7 +365,7 @@ evalLik <- function(BASS)
       beta * sum(BASS@res$NHCs) -
       0.5 * sum(log(lambda_i)) * C -
       0.5 * sum((mu_i - replicate(C, d_i))^2 / 
-        (replicate(C, lambda_i * BASS@res$R2))) -
+        (replicate(C, lambda_i * BASS@res$R2[, 1]))) -
       0.5 * sum(log(lambda_i) + lambda_i) -
       (BASS@a + 1) * log(sigma2_i) -
       BASS@b / sigma2_i

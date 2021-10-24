@@ -1,7 +1,7 @@
 // Author: Zheng Li
 // Date: 2020-08-13
 // Functions used in Gibbs sampler
-#include <RcppArmadillo.h>
+#include <RcppDist.h>
 #include "compPartitionRatio.h"
 #include "GibbsFuncs.h"
 #include <string>
@@ -10,20 +10,20 @@ using namespace Rcpp;
 // [[Rcpp::plugins(cpp11)]]
 
 void initParams(
-  Rcpp::NumericMatrix &mu, // J x C
+  arma::mat &mu, // J x C
   Rcpp::IntegerVector &z, // N x 1
   Rcpp::IntegerVector &c, // N x 1
   double &beta,
-  Rcpp::NumericVector &lambda, // J x 1
-  Rcpp::NumericVector &d, // J x 1
-  Rcpp::NumericVector &R2, // J x 1
+  arma::vec &lambda, // J x 1
+  arma::vec &d, // J x 1
+  arma::vec &R2, // J x 1
   Rcpp::String initMethod,
-  const Rcpp::NumericMatrix &X, // N x J 
+  const arma::mat &X, // N x J 
   const int R
   )
 {
-  int J = mu.nrow();
-  int C = mu.ncol();
+  int J = mu.n_rows;
+  int C = mu.n_cols;
   Rcpp::List kmResC;
   Rcpp::List kmResR;
   Rcpp::List mclustResC;
@@ -37,7 +37,7 @@ void initParams(
     kmResC = kmeans(_["x"] = X, _["centers"] = C, _["iter.max"] = 100, _["nstart"] = 1000);
     c = kmResC["cluster"];
     // 2. Initialize mu
-    mu = Rcpp::transpose(Rcpp::as<NumericMatrix>(kmResC["centers"]));
+    mu = Rcpp::as<arma::mat>(kmResC["centers"]).t();
     // 3. Initialize z
     kmResR = kmeans(_["x"] = X, _["centers"] = R, _["iter.max"] = 100, _["nstart"] = 1000);
     z = kmResR["cluster"];
@@ -51,7 +51,7 @@ void initParams(
     c = mclustResC["classification"];
     // 2. Initialize mu
     mclustResParam = mclustResC["parameters"];
-    mu = Rcpp::as<NumericMatrix>(mclustResParam["mean"]);
+    mu = Rcpp::as<arma::mat>(mclustResParam["mean"]);
     // 3. Initialize z
     mclustResR = Mclust(_["data"] = X, _["G"] = R, _["modelNames"] = "EEE", 
       _["verbose"] = false);
@@ -72,8 +72,7 @@ void initParams(
   // 7. Compute R2: squared range of each feature
   for(int j = 0; j < J; j++)
   {
-    Rcpp::NumericVector range = Rcpp::range(X(_, j));
-    R2(j) = std::pow(range(1) - range(0), 2.0);
+    R2(j) = std::pow(arma::range(X.col(j)), 2.0);
   }
 }
 
@@ -240,17 +239,17 @@ void updateMu(
 
 
 void updateMuNG(
-  const Rcpp::NumericMatrix &X,
+  const arma::mat &X,
   std::map<int, std::set<int>> &T,
   const Rcpp::NumericMatrix &sigma2,
-  const Rcpp::NumericVector &d,
-  const Rcpp::NumericVector &lambda,
-  const Rcpp::NumericVector &R2,
-  Rcpp::NumericMatrix &mu
+  const arma::vec &d,
+  const arma::vec &lambda,
+  const arma::vec &R2,
+  arma::mat &mu
   )
 {
-  int J = mu.nrow();
-  int C = mu.ncol();
+  int J = mu.n_rows;
+  int C = mu.n_cols;
   double sumXij;
 
   for(int j = 0; j < J; j++)
@@ -273,18 +272,49 @@ void updateMuNG(
 }
 
 
+void updateMuEEE(
+  const arma::mat &X,
+  std::map<int, std::set<int>> &T,
+  const arma::mat &Sigmainv,
+  const arma::vec &d,
+  const arma::vec &lambda,
+  const arma::vec &R2,
+  arma::mat &mu
+  )
+{
+  int J = mu.n_rows;
+  int C = mu.n_cols;
+  arma::rowvec sumXc(J, arma::fill::zeros);
+  arma::vec fcmu(J);
+  arma::mat fcSigma(J, J);
+
+  for(int c = 0; c < C; c++)
+  {
+    fcSigma = arma::inv(T[c].size() * Sigmainv + 
+      arma::diagmat(1.0 / lambda / R2));
+    sumXc.fill(0.0);
+    for(auto i: T[c])
+    {
+      sumXc += X.row(i);
+    }
+    fcmu = fcSigma * (Sigmainv * sumXc.t() + d / lambda / R2);
+    mu.col(c) = rmvnorm(1, fcmu, fcSigma).t();
+  }
+}
+
+
 void updateLambda(
   double v1,
   double v2,
-  const Rcpp::NumericMatrix &mu,
-  const Rcpp::NumericVector &d,
-  const Rcpp::NumericVector &R2,
-  Rcpp::NumericVector &lambda
+  const arma::mat &mu,
+  const arma::vec &d,
+  const arma::vec &R2,
+  arma::vec &lambda
   )
 {
   Rcpp::Function rgig("rgig");
-  int J = mu.nrow();
-  int C = mu.ncol();
+  int J = mu.n_rows;
+  int C = mu.n_cols;
   double aj = 2.0 * v2;
   double bj;
   double pC = v1 - C / 2.0;
@@ -303,14 +333,14 @@ void updateLambda(
 
 
 void updateD(
-  const Rcpp::NumericMatrix &mu,
-  const Rcpp::NumericVector &lambda,
-  const Rcpp::NumericVector &R2,
-  Rcpp::NumericVector &d
+  const arma::mat &mu,
+  const arma::vec &lambda,
+  const arma::vec &R2,
+  arma::vec &d
   )
 {
-  int J = mu.nrow();
-  int C = mu.ncol();
+  int J = mu.n_rows;
+  int C = mu.n_cols;
   double sumMujc;
 
   for(int j = 0; j < J; j++)
@@ -355,15 +385,15 @@ void updateSigma2(
 
 
 void updateSigma2EII(
-  const Rcpp::NumericMatrix &X,
+  const arma::mat &X,
   std::map<int, std::set<int>> &T,
-  const Rcpp::NumericMatrix &mu,
+  const arma::mat &mu,
   const double a,
   const double b,
   Rcpp::NumericMatrix &sigma2
   )
 {
-  int N = X.nrow();
+  int N = X.n_rows;
   int J = sigma2.nrow();
   int C = sigma2.ncol();
   double sigma2EII;
@@ -382,6 +412,31 @@ void updateSigma2EII(
   sigma2EII = R::rgamma(a + N * J / 2.0, 1.0 / (b + sumXMinusMu2 / 2.0));
   sigma2EII = 1.0 / sigma2EII;
   std::fill(sigma2.begin(), sigma2.end(), sigma2EII);
+}
+
+
+void updateSigmaEEE(
+  const arma::mat &X,
+  const Rcpp::IntegerVector &c,
+  const arma::mat &mu,
+  const arma::mat &W0inv,
+  const int n0,
+  arma::mat &Sigmainv
+  )
+{
+  int N = X.n_rows;
+  int J = X.n_cols;
+  arma::mat smpCov(J, J, arma::fill::zeros);
+  arma::mat fcW0(J, J);
+  int fcn0 = N + n0;
+
+  for(int n = 0; n < N; n++)
+  {
+    smpCov += (X.row(n).t() - mu.col(c(n))) *
+      (X.row(n) - mu.col(c(n)).t());
+  }
+  fcW0 = arma::inv(W0inv + smpCov);
+  Sigmainv = rwish(fcn0, fcW0);
 }
 
 
@@ -409,15 +464,15 @@ void updatePi(
 
 
 void updateC(
-  const Rcpp::NumericMatrix &X,
-  const Rcpp::NumericMatrix &mu,
+  const arma::mat &X,
+  const arma::mat &mu,
   const Rcpp::NumericMatrix &sigma2,
   const Rcpp::NumericMatrix &pi,
   const Rcpp::IntegerVector &z,
   Rcpp::IntegerVector &c
   )
 {
-  int N = X.nrow();
+  int N = X.n_rows;
   int C = pi.nrow();
   double sumXMinusMu2;
   double logSigma2;
@@ -428,9 +483,41 @@ void updateC(
   {
     for(int c = 0; c < C; c++)
     {
-      sumXMinusMu2 = -Rcpp::sum(Rcpp::pow(X(n, _) - mu(_, c), 2.0) / (2.0 * sigma2(_, c)));
+      sumXMinusMu2 = -Rcpp::sum(
+        Rcpp::as<NumericVector>(wrap(arma::pow(X.row(n).t() - mu.col(c), 2.0))) /
+        (2.0 * sigma2(_, c)));
       logSigma2 = -0.5 * Rcpp::sum(Rcpp::log(sigma2(_, c)));
       probCK(c) = std::log(pi(c, z(n))) + logSigma2 + sumXMinusMu2;
+    }
+    probCK = probCK - Rcpp::max(probCK);
+    probCK = Rcpp::exp(probCK);
+    c(n) = Rcpp::sample(cLabels, 1, true, probCK)[0];
+  }
+}
+
+
+void updateCEEE(
+  const arma::mat &X, // N x J
+  const arma::mat &mu, // J x C
+  const arma::mat &Sigmainv, // J x J
+  const Rcpp::NumericMatrix &pi, // C x K
+  const Rcpp::IntegerVector &z, // N x 1
+  Rcpp::IntegerVector &c // N x 1
+  )
+{
+  int N = X.n_rows;
+  int C = pi.nrow();
+  Rcpp::IntegerVector cLabels = seq(0, C - 1);
+  Rcpp::NumericVector probCK(C); 
+  for(int n = 0; n < N; n++)
+  {
+    for(int c = 0; c < C; c++)
+    {
+      probCK(c) = -0.5 * arma::as_scalar(
+          (X.row(n).t() - mu.col(c)).t() * Sigmainv *
+          (X.row(n).t() - mu.col(c))
+        ) +
+        std::log(pi(c, z(n)));
     }
     probCK = probCK - Rcpp::max(probCK);
     probCK = Rcpp::exp(probCK);
@@ -749,34 +836,47 @@ void printVs(std::vector<std::map<int, std::set<int>>> Vs)
 
 
 void updateAll(
-  const Rcpp::NumericMatrix &X,
+  const arma::mat &X,
   const int L,
   const double alpha0,
+  const Rcpp::String covStruc,
   const double a,
   const double b,
+  const arma::mat &W0inv,
+  const int n0,
   const double kappa,
   const double beta,
-  const Rcpp::NumericVector &R2,
+  const arma::vec &R2,
   const Rcpp::IntegerVector &smpIdx,
   std::vector<std::map<int, std::set<int>>> &Vs,
   Rcpp::IntegerVector &zl,
   Rcpp::IntegerVector &cl,
   Rcpp::NumericMatrix &pi,
   Rcpp::NumericMatrix &sigma2,
-  Rcpp::NumericMatrix &mu,
+  arma::mat &Sigmainv,
+  arma::mat &mu,
   Rcpp::IntegerVector &c,
   Rcpp::IntegerVector &z,
-  Rcpp::NumericVector &lambda,
-  Rcpp::NumericVector &d,
+  arma::vec &lambda,
+  arma::vec &d,
   std::map<int, std::set<int>> &T,
   std::map<int, std::set<int>> &S,
   std::map<std::string, std::set<int>> &U
   )
 {
   updatePi(U, alpha0, pi);
-  updateSigma2EII(X, T, mu, a, b, sigma2);
-  updateMuNG(X, T, sigma2, d, lambda, R2, mu);
-  updateC(X, mu, sigma2, pi, z, c);
+  if(covStruc == "EII")
+  {
+    updateSigma2EII(X, T, mu, a, b, sigma2);
+    updateMuNG(X, T, sigma2, d, lambda, R2, mu);
+    updateC(X, mu, sigma2, pi, z, c); 
+  }
+  else if(covStruc == "EEE")
+  {
+    updateSigmaEEE(X, c, mu, W0inv, n0, Sigmainv);
+    updateMuEEE(X, T, Sigmainv, d, lambda, R2, mu);
+    updateCEEE(X, mu, Sigmainv, pi, z, c);
+  }
   for(int l = 0; l < L; l++)
   {
     zl =  z[Range(smpIdx(l), smpIdx(l+1)-1)];

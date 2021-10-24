@@ -6,22 +6,30 @@
 
 using namespace Rcpp;
 
+#ifdef RCPP_USE_GLOBAL_ROSTREAM
+Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
+Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
+#endif
+
 // Gibbs
-Rcpp::List Gibbs(const Rcpp::NumericMatrix X, Rcpp::NumericMatrix xy, const Rcpp::IntegerVector Ns, const int C, const int R, Rcpp::String initMethod, const double kappa, const double alpha0, const double a, const double b, const int k, const int warmUp, const int numSamples, Rcpp::String betaEstApproach, const double betaIn, const double betaMax, const double epsilon, const int M, const int B, const Rcpp::NumericMatrix NHC);
-RcppExport SEXP _BASS_Gibbs(SEXP XSEXP, SEXP xySEXP, SEXP NsSEXP, SEXP CSEXP, SEXP RSEXP, SEXP initMethodSEXP, SEXP kappaSEXP, SEXP alpha0SEXP, SEXP aSEXP, SEXP bSEXP, SEXP kSEXP, SEXP warmUpSEXP, SEXP numSamplesSEXP, SEXP betaEstApproachSEXP, SEXP betaInSEXP, SEXP betaMaxSEXP, SEXP epsilonSEXP, SEXP MSEXP, SEXP BSEXP, SEXP NHCSEXP) {
+Rcpp::List Gibbs(const Rcpp::NumericMatrix Xin, Rcpp::NumericMatrix xy, const Rcpp::IntegerVector Ns, const int C, const int R, Rcpp::String initMethod, Rcpp::String covStruc, const double kappa, const double alpha0, const double a, const double b, const Rcpp::NumericMatrix W0in, const int n0, const int k, const int warmUp, const int numSamples, Rcpp::String betaEstApproach, const double betaIn, const double betaMax, const double epsilon, const int M, const int B, const Rcpp::NumericMatrix NHC);
+RcppExport SEXP _BASS_Gibbs(SEXP XinSEXP, SEXP xySEXP, SEXP NsSEXP, SEXP CSEXP, SEXP RSEXP, SEXP initMethodSEXP, SEXP covStrucSEXP, SEXP kappaSEXP, SEXP alpha0SEXP, SEXP aSEXP, SEXP bSEXP, SEXP W0inSEXP, SEXP n0SEXP, SEXP kSEXP, SEXP warmUpSEXP, SEXP numSamplesSEXP, SEXP betaEstApproachSEXP, SEXP betaInSEXP, SEXP betaMaxSEXP, SEXP epsilonSEXP, SEXP MSEXP, SEXP BSEXP, SEXP NHCSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Rcpp::NumericMatrix >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericMatrix >::type Xin(XinSEXP);
     Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type xy(xySEXP);
     Rcpp::traits::input_parameter< const Rcpp::IntegerVector >::type Ns(NsSEXP);
     Rcpp::traits::input_parameter< const int >::type C(CSEXP);
     Rcpp::traits::input_parameter< const int >::type R(RSEXP);
     Rcpp::traits::input_parameter< Rcpp::String >::type initMethod(initMethodSEXP);
+    Rcpp::traits::input_parameter< Rcpp::String >::type covStruc(covStrucSEXP);
     Rcpp::traits::input_parameter< const double >::type kappa(kappaSEXP);
     Rcpp::traits::input_parameter< const double >::type alpha0(alpha0SEXP);
     Rcpp::traits::input_parameter< const double >::type a(aSEXP);
     Rcpp::traits::input_parameter< const double >::type b(bSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericMatrix >::type W0in(W0inSEXP);
+    Rcpp::traits::input_parameter< const int >::type n0(n0SEXP);
     Rcpp::traits::input_parameter< const int >::type k(kSEXP);
     Rcpp::traits::input_parameter< const int >::type warmUp(warmUpSEXP);
     Rcpp::traits::input_parameter< const int >::type numSamples(numSamplesSEXP);
@@ -32,7 +40,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const int >::type M(MSEXP);
     Rcpp::traits::input_parameter< const int >::type B(BSEXP);
     Rcpp::traits::input_parameter< const Rcpp::NumericMatrix >::type NHC(NHCSEXP);
-    rcpp_result_gen = Rcpp::wrap(Gibbs(X, xy, Ns, C, R, initMethod, kappa, alpha0, a, b, k, warmUp, numSamples, betaEstApproach, betaIn, betaMax, epsilon, M, B, NHC));
+    rcpp_result_gen = Rcpp::wrap(Gibbs(Xin, xy, Ns, C, R, initMethod, covStruc, kappa, alpha0, a, b, W0in, n0, k, warmUp, numSamples, betaEstApproach, betaIn, betaMax, epsilon, M, B, NHC));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -99,7 +107,7 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_BASS_Gibbs", (DL_FUNC) &_BASS_Gibbs, 20},
+    {"_BASS_Gibbs", (DL_FUNC) &_BASS_Gibbs, 23},
     {"_BASS_avgNeighbors", (DL_FUNC) &_BASS_avgNeighbors, 2},
     {"_BASS_testFastBetaEst", (DL_FUNC) &_BASS_testFastBetaEst, 7},
     {"_BASS_testPottsSampling", (DL_FUNC) &_BASS_testPottsSampling, 5},

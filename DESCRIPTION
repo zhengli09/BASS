@@ -20,7 +20,7 @@ Depends:
     mclust
 License: GPL (>= 2)
 Imports: 
-    Rcpp (>= 1.0.5),
+    Rcpp (>= 1.0.7),
     RcppArmadillo (>= 0.10.1.2.0),
     GIGrvg (>= 0.5),
     label.switching (>= 1.8),
@@ -29,10 +29,12 @@ Imports:
     dplyr (>= 1.0.2),
     cowplot (>= 1.1.0),
     gghighlight (>= 0.3.1),
-    scales (>= 1.1.1)
+    scales (>= 1.1.1),
+    RcppDist (>= 0.1.1)
 biocViews:
     scran (>= 1.18.3)
 LinkingTo: 
     Rcpp,
-    RcppArmadillo
+    RcppArmadillo,
+    RcppDist
 RoxygenNote: 7.1.1
