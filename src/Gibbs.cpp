@@ -39,6 +39,7 @@ Rcpp::List Gibbs(
   const double betaIn, // fixed value of beta if the betaEstApproach is set to be "FIXED"
   const double betaMax, // upper bound of beta
   const double epsilon, // uniform random walk step size
+  const double betaTol, // tolerance for checking beta convergence
   const int M, // Monte Carlo iterations to approximate partition ratio
   const int B, // number of burn-in steps in Potts sampling
   const Rcpp::NumericMatrix NHC // number of homogeneous cliques under different beta
@@ -70,7 +71,7 @@ Rcpp::List Gibbs(
   arma::vec lambda(J); // J x 1 vector of scaling factors of prior variance of mu
   arma::vec d(J); // J x 1 vector of prior mean of mu
   arma::vec R2(J); // J x 1 vector of squared range of each gene
-  double beta; // scalar, interaction paramter of Potts model
+  double beta = betaIn; // scalar, interaction paramter of Potts model
   double acceptBetaP = 0.0; // scalar, acceptance probability of beta
   bool isConverged = false; // convergence check of beta
 
@@ -87,7 +88,7 @@ Rcpp::List Gibbs(
   Rcpp::NumericVector NHCs(L); // exponents of Potts kernel
 
   // parameter initialization
-  initParams(mu, z, c, beta, lambda, d, R2, initMethod, X, R);
+  initParams(mu, z, c, lambda, d, R2, initMethod, X, R);
   // Note: assignment by "=" is copy by reference, not value 
   // initC = c;
   initC.assign(c.begin(), c.end());
@@ -105,7 +106,6 @@ Rcpp::List Gibbs(
   // 1.handling beta
   if(betaEstApproach == "FIXED")
   {
-    beta = betaIn;
     cout << "Fixing beta to be: " << beta << endl;
   }
   else if(betaEstApproach == "ACCUR_EST" || betaEstApproach == "FAST_EST")
@@ -134,7 +134,7 @@ Rcpp::List Gibbs(
 
       if(iter >= 200 && iter % 100 == 0)
       {
-        isConverged = checkBetaConvergence(burninBeta, iter);
+        isConverged = checkBetaConvergence(burninBeta, iter, betaTol);
       }
 
       burninBeta.push_back(beta);

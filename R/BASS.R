@@ -26,6 +26,7 @@
 #' @slot beta Fixed value of beta if the betaEstApproach is set to be "FIXED"
 #' @slot beta_max upper bound of beta
 #' @slot epsilon Uniform random walk step size
+#' @slot beta_tol tolerance for checking beta convergence
 #' @slot B Number of burn-in steps in Potts sampling
 #' @slot M Number of Potts samples to approximate Potts partition ratio
 #' @slot res Result list
@@ -55,6 +56,7 @@ setClass("BASS", slots = list(
   beta = "numeric",
   beta_max = "numeric",
   epsilon = "numeric",
+  beta_tol = "numeric",
   B = "numeric",
   M = "numeric",
   res = "list",
@@ -80,7 +82,8 @@ createBASSObject <- function(
   beta_est_approach = c("FIXED", "ACCUR_EST"),
   beta = 1,
   beta_max = 4,
-  epsilon = 0.1, 
+  epsilon = 0.1,
+  beta_tol = 0.1,
   B = 100,
   M = 100
   )
@@ -127,9 +130,9 @@ createBASSObject <- function(
     init_method = init_method[1], cov_struc = cov_struc[1], 
     kappa = kappa, alpha0 = alpha0, a = a, b = b, W0 = W0, n0 = n0, 
     k = k, burn_in = burn_in, samples = samples, 
-    beta_est_approach = beta_est_approach[1], 
-    beta = beta, beta_max = beta_max, epsilon = epsilon, B = B, M = M
-    )
+    beta_est_approach = beta_est_approach[1], beta = beta, 
+    beta_max = beta_max, epsilon = epsilon, beta_tol = beta_tol,
+    B = B, M = M)
   rm(X)
   rm(xy)
   showWelcomeMessage(BASS)
@@ -197,6 +200,8 @@ listAllHyper <- function(BASS)
       BASS@M, "\n", sep = "")
     cat("    - Uniform random walk step size epsilon: ", 
       BASS@epsilon, "\n", sep = "")
+    cat("    - Convergence tolerance for beta: ", 
+      BASS@beta_tol, "\n", sep = "")
   }
   cat("    - Upper bound for beta: ", BASS@beta_max, "\n", sep = "")
   cat("    - Concentration parameter of Dirichlet distribution alpha0: ", 
@@ -223,31 +228,62 @@ setMethod(
 #' @export
 BASS.preprocess <- function(
   BASS,
-  doLogNormalize = TRUE, 
-  doSelectHVGs = TRUE,
+  doLogNormalize = TRUE,
+  geneSelect = c("sparkx", "hvgs"),
   doPCA = TRUE,
   scaleFeature = TRUE,
+  doBatchCorrect = TRUE,
   nHVG = 2000,
+  nSE = 3000,
   nPC = 20
   )
 {
+  geneSelect <- match.arg(geneSelect)
   X_run <- do.call(cbind, BASS@X)
+  # 1.Library size normalization + log transformation
   if(doLogNormalize){
+    cat("***** Log-normalize gene expression data *****\n")
     X_run <- scater::normalizeCounts(X_run, log = TRUE)
   }
-  if(doSelectHVGs)
-  {
+
+  # 2.Gene selection
+  if(geneSelect == "sparkx" & BASS@P > nSE){
+    cat("***** Select spatially expressed genes with sparkx *****\n")
+    genes <- lapply(1:BASS@L, function(l){
+      capture.output(sparkx.l <- SPARK::sparkx(BASS@X[[l]], BASS@xy[[l]]))
+      sparkx.l <- sparkx.l$res_mtest[order(sparkx.l$res_mtest$adjustedPval), ]
+      genes.l <- head(rownames(sparkx.l), n = nSE)
+    })
+    genes <- unique(unlist(genes))
+    X_run <- X_run[genes, ]
+  } else if(geneSelect == "hvgs" & BASS@P > nHVG){
+    cat("***** Select highly variable genes *****\n")
     dec <- scran::modelGeneVar(X_run)
-    hvgs <- scran::getTopHVGs(dec, n = nHVG)
-    X_run <- X_run[hvgs, ]
+    genes <- scran::getTopHVGs(dec, n = nHVG)
+    X_run <- X_run[genes, ]
   }
+  cat("***** Exclude genes with 0 expression *****\n")
+  idx_rm <- apply(X_run, 1, sum) == 0
+  X_run <- X_run[!idx_rm, ]
+
+  # 3.Dimension reduction
   if(doPCA){
+    cat("***** Reduce data dimension with PCA *****\n")
     X_run <- apply(X_run, MARGIN = 1, scale, 
       center = T, scale = scaleFeature)
     Q <- prcomp(X_run, scale. = F)$rotation
     X_run <- (X_run %*% Q)[, 1:nPC]
   } else{
     X_run <- t(X_run)
+  }
+
+  # 4.Batch effect correction
+  if(doBatchCorrect & BASS@L > 1){
+    cat("***** Correct batch effect with Harmony *****\n")
+    X_run <- harmony::HarmonyMatrix(
+      data_mat = X_run,
+      meta_data = rep(1:BASS@L, BASS@Ns), 
+      do_pca = F, verbose = F)
   }
   BASS@X_run <- X_run
   return(BASS)
@@ -276,8 +312,8 @@ BASS.run <- function(BASS)
     W0in = BASS@W0 * diag(ncol(BASS@X_run)), n0 = BASS@n0, k = BASS@k, 
     warmUp = BASS@burn_in, numSamples = BASS@samples, 
     betaEstApproach = BASS@beta_est_approach, betaIn = BASS@beta, 
-    betaMax = BASS@beta_max, epsilon = BASS@epsilon, M = BASS@M, 
-    B = BASS@B, NHC = NHC)
+    betaMax = BASS@beta_max, epsilon = BASS@epsilon, betaTol = BASS@beta_tol,
+    M = BASS@M, B = BASS@B, NHC = NHC)
   BASS@res <- res
   return(BASS)
 }
@@ -307,20 +343,15 @@ BASS.postprocess <- function(BASS)
     })
 
   # 3.cell type proportion matrix
-  # This approach is unstable and still suffers from
-  # label switching
-  # pi_est_ls <- label.switching::permute.mcmc(
-  #   aperm(BASS@res$pi, perm = c(3, 1, 2)), 
-  #   permutations = c_ls$permutations[[1]]
-  #   )$output # n x c x k
-  # pi_est_ls <- label.switching::permute.mcmc(
-  #   aperm(pi_est_ls, perm = c(1, 3, 2)), 
-  #   permutations = z_ls$permutations[[1]]
-  #   )$output # n x k x c
-  # pi_est_ls <- apply(aperm(pi_est_ls, perm = c(3, 2, 1)), 
-  #   MARGIN = c(1, 2), mean) # C x R
-  pi_est_ls <- table(unlist(c_est_ls), unlist(z_est_ls))
-  pi_est_ls <- pi_est_ls %*% diag(1 / apply(pi_est_ls, 2, sum))
+  ncell_cr <- table(unlist(c_est_ls), unlist(z_est_ls))
+  # certain tissue domains or cell types may not contain any cells
+  r_wcell <- which(1:BASS@R %in% colnames(ncell_cr))
+  c_wcell <- which(1:BASS@C %in% rownames(ncell_cr))
+  pi_est_ls <- matrix(0, BASS@C, BASS@R)
+  pi_est_ls[c_wcell, r_wcell] <- ncell_cr
+  ncell_r <- apply(pi_est_ls, 2, sum)
+  ncell_r[ncell_r == 0] <- 1
+  pi_est_ls <- pi_est_ls %*% diag(1 / ncell_r)
 
   # 4.posterior density asumming beta is fixed
   logliks <- evalLik(BASS)

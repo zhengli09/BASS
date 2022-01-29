@@ -13,7 +13,6 @@ void initParams(
   arma::mat &mu, // J x C
   Rcpp::IntegerVector &z, // N x 1
   Rcpp::IntegerVector &c, // N x 1
-  double &beta,
   arma::vec &lambda, // J x 1
   arma::vec &d, // J x 1
   arma::vec &R2, // J x 1
@@ -60,16 +59,13 @@ void initParams(
   c = c - 1;
   z = z - 1;
 
-  // 4. Initialize beta
-  beta = 1.0;
-
-  // 5. Initialize lambda to 1 (no shrinkage)
+  // 4. Initialize lambda to 1 (no shrinkage)
   lambda.fill(1.0);
 
-  // 6. Initialize d to 0
+  // 5. Initialize d to 0
   d.fill(0.0);
 
-  // 7. Compute R2: squared range of each feature
+  // 6. Compute R2: squared range of each feature
   for(int j = 0; j < J; j++)
   {
     R2(j) = std::pow(arma::range(X.col(j)), 2.0);

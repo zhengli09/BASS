@@ -10,7 +10,6 @@ void initParams(
   arma::mat &mu, // J x C
   Rcpp::IntegerVector &z, // N x 1
   Rcpp::IntegerVector &c, // N x 1
-  double &beta,
   arma::vec &lambda, // J x 1
   arma::vec &d, // J x 1
   arma::vec &R2, // J x 1
@@ -219,7 +218,7 @@ bool updateBetaFast(
 bool checkBetaConvergence(
   const Rcpp::NumericVector &burninBeta,
   int iter,
-  double tol = 0.1
+  double tol
   );
 
 // Compute Pseudo-likelihood of a Potts model in log scale
