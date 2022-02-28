@@ -10,10 +10,13 @@ createBASSObject(
   C,
   R,
   init_method = c("kmeans", "mclust"),
+  cov_struc = c("EEE", "EII"),
   kappa = 0.01,
   alpha0 = 1,
   a = 2,
   b = 1,
+  W0 = 1,
+  n0 = 1,
   k = 4,
   burn_in = 10000,
   samples = 10000,
@@ -21,6 +24,7 @@ createBASSObject(
   beta = 1,
   beta_max = 4,
   epsilon = 0.1,
+  beta_tol = 0.1,
   B = 100,
   M = 100
 )

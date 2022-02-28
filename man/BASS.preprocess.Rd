@@ -7,10 +7,12 @@
 BASS.preprocess(
   BASS,
   doLogNormalize = TRUE,
-  doSelectHVGs = TRUE,
+  geneSelect = c("sparkx", "hvgs"),
   doPCA = TRUE,
   scaleFeature = TRUE,
+  doBatchCorrect = TRUE,
   nHVG = 2000,
+  nSE = 3000,
   nPC = 20
 )
 }

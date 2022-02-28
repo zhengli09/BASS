@@ -69,7 +69,7 @@ setClass("BASS", slots = list(
 createBASSObject <- function(
   X, xy, C, R, 
   init_method = c("kmeans", "mclust"), 
-  cov_struc = c("EII", "EEE"),
+  cov_struc = c("EEE", "EII"),
   kappa = 0.01, 
   alpha0 = 1, 
   a = 2, 
@@ -294,17 +294,6 @@ BASS.preprocess <- function(
 #' @export
 BASS.run <- function(BASS)
 {
-  if(BASS@beta_est_approach == "FAST_EST" & BASS@L == 1){
-    N <- round(BASS@Ns / 100) * 100
-    if(N < 0 | N > 20000){
-      stop("Number of cells exceeds the range (0-20000) for fast estimation.",
-        " Please use other estimation methods.")
-    }
-    NHC <- NHCs[as.character(N), as.character(BASS@R), , ]
-  } else{
-    NHC <- matrix(0)
-  }
-
   xy <- do.call(rbind, BASS@xy)
   res <- Gibbs(Xin = BASS@X_run, xy = xy, Ns = BASS@Ns, C = BASS@C, R = BASS@R,
     initMethod = BASS@init_method, covStruc = BASS@cov_struc, 
@@ -313,7 +302,7 @@ BASS.run <- function(BASS)
     warmUp = BASS@burn_in, numSamples = BASS@samples, 
     betaEstApproach = BASS@beta_est_approach, betaIn = BASS@beta, 
     betaMax = BASS@beta_max, epsilon = BASS@epsilon, betaTol = BASS@beta_tol,
-    M = BASS@M, B = BASS@B, NHC = NHC)
+    M = BASS@M, B = BASS@B)
   BASS@res <- res
   return(BASS)
 }
@@ -353,53 +342,12 @@ BASS.postprocess <- function(BASS)
   ncell_r[ncell_r == 0] <- 1
   pi_est_ls <- pi_est_ls %*% diag(1 / ncell_r)
 
-  # 4.posterior density asumming beta is fixed
-  logliks <- evalLik(BASS)
-
-  # 5.calculate BIC
-  nparams <- 2 * sum(BASS@Ns) + (BASS@C + 2) * ncol(BASS@X_run) + 
-    BASS@C * BASS@R + 1
-  BIC <- 2 * mean(logliks) - nparams * log(sum(BASS@Ns))
-
   postprocess <- list(
     c_ls = c_est_ls,
     z_ls = z_est_ls,
-    pi_ls = pi_est_ls,
-    logliks = logliks,
-    BIC = BIC
+    pi_ls = pi_est_ls
     )
   BASS@res_postprocess <- postprocess
   return(BASS)
-}
-
-
-#' Evaluate posterior density at each interation assuming
-#' beta is fixed
-evalLik <- function(BASS)
-{
-  beta <- BASS@res$beta
-  J <- ncol(BASS@X_run)
-  C <- BASS@C
-  loglik <- sapply(1:BASS@samples, function(i){
-     c_i <- BASS@res$c[, i] + 1
-     z_i <- BASS@res$z[, i] + 1
-     mu_i <- BASS@res$mu[, , i]
-     d_i <- BASS@res$d[, i]
-     lambda_i <- BASS@res$lambda[, i]
-     sigma2_i <- BASS@res$sigma2[1, 1, i]
-     pi_i <- BASS@res$pi[, , i]
-
-    loglik_i <- 
-      -0.5 * log(sigma2_i) * J * sum(BASS@Ns) -
-      0.5 * sum((BASS@X_run - t(mu_i[, c_i]))^2) / sigma2_i +
-      sum(log(mapply(function(i, j) pi_i[i, j], c_i, z_i))) -
-      beta * sum(BASS@res$NHCs) -
-      0.5 * sum(log(lambda_i)) * C -
-      0.5 * sum((mu_i - replicate(C, d_i))^2 / 
-        (replicate(C, lambda_i * BASS@res$R2[, 1]))) -
-      0.5 * sum(log(lambda_i) + lambda_i) -
-      (BASS@a + 1) * log(sigma2_i) -
-      BASS@b / sigma2_i
-  })
 }
 

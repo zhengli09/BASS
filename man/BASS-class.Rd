@@ -29,6 +29,8 @@ BASS object stores all the data and parameters used to run the algorithm
 \item{\code{init_method}}{Initialization method for both cell types and 
 tissue structures}
 
+\item{\code{cov_struc}}{Covariance structure for gene expression features}
+
 \item{\code{kappa}}{Prior parameter of gene expression}
 
 \item{\code{alpha0}}{Concentration parameter of Dirichlet distribution}
@@ -36,6 +38,10 @@ tissue structures}
 \item{\code{a}}{Shape parameter of the inverse gamma prior}
 
 \item{\code{b}}{Scale parameter of the inverse gamma prior}
+
+\item{\code{W0}}{W0*I represents the scale matrix of Wishart prior}
+
+\item{\code{n0}}{Degrees of freedom of Wishart prior}
 
 \item{\code{k}}{Number of neighbors for kNN graph}
 
@@ -50,6 +56,8 @@ tissue structures}
 \item{\code{beta_max}}{upper bound of beta}
 
 \item{\code{epsilon}}{Uniform random walk step size}
+
+\item{\code{beta_tol}}{tolerance for checking beta convergence}
 
 \item{\code{B}}{Number of burn-in steps in Potts sampling}
 

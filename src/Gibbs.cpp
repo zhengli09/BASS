@@ -41,8 +41,7 @@ Rcpp::List Gibbs(
   const double epsilon, // uniform random walk step size
   const double betaTol, // tolerance for checking beta convergence
   const int M, // Monte Carlo iterations to approximate partition ratio
-  const int B, // number of burn-in steps in Potts sampling
-  const Rcpp::NumericMatrix NHC // number of homogeneous cliques under different beta
+  const int B // number of burn-in steps in Potts sampling
   )
 {
   arma::mat X = Rcpp::as<arma::mat>(Xin);
@@ -85,7 +84,6 @@ Rcpp::List Gibbs(
   Rcpp::NumericVector burninBeta; // burn-in samples of beta for checking convergence
   arma::mat posLambda(J, numSamples); // posterior samples of lambda
   arma::mat posD(J, numSamples); // posterior samples of d
-  Rcpp::NumericVector NHCs(L); // exponents of Potts kernel
 
   // parameter initialization
   initParams(mu, z, c, lambda, d, R2, initMethod, X, R);
@@ -125,11 +123,6 @@ Rcpp::List Gibbs(
       {
         acceptBetaP += updateBeta(z[Range(0, smpIdx(1)-1)], Vs[0], R, epsilon, 
           M, B, betaMax, beta);
-      }
-      else if(betaEstApproach == "FAST_EST")
-      {
-        acceptBetaP += updateBetaFast(z[Range(0, smpIdx(1)-1)], Vs[0], epsilon, 
-          NHC, beta);
       }
 
       if(iter >= 200 && iter % 100 == 0)
@@ -189,12 +182,6 @@ Rcpp::List Gibbs(
   }
   cout << endl << "done" << endl;
 
-  for(int l = 0; l < L; l++)
-  {
-    zl =  z[Range(smpIdx(l), smpIdx(l+1)-1)];
-    NHCs(l) = compNHC(Vs[l], zl);
-  }
-
   Rcpp::List res = Rcpp::List::create(
     _["mu"] = posMu, 
     _["sigma2"] = posSigma2, 
@@ -202,7 +189,6 @@ Rcpp::List Gibbs(
     _["pi"] = posPi, 
     _["z"] = posZ, 
     _["init_z"] = initZ,
-    _["NHCs"] = NHCs,
     _["c"] = posC,
     _["init_c"] = initC,
     _["burninBeta"] = burninBeta,

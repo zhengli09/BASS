@@ -21,14 +21,14 @@ Depends:
 License: GPL (>= 2)
 Imports: 
     Rcpp (>= 1.0.7),
-    RcppArmadillo (>= 0.10.1.2.0),
+    RcppArmadillo (>= 0.10.1.2.2),
     GIGrvg (>= 0.5),
     label.switching (>= 1.8),
     mclust (>= 5.4.7),
     ggplot2 (>= 3.3.4),
-    dplyr (>= 1.0.2),
-    cowplot (>= 1.1.0),
-    gghighlight (>= 0.3.1),
+    dplyr (>= 1.0.8),
+    cowplot (>= 1.1.1),
+    gghighlight (>= 0.3.2),
     scales (>= 1.1.1),
     RcppDist (>= 0.1.1)
 biocViews:
@@ -37,4 +37,4 @@ LinkingTo:
     Rcpp,
     RcppArmadillo,
     RcppDist
-RoxygenNote: 7.1.1
+RoxygenNote: 7.1.2
