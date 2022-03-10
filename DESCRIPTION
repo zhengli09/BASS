@@ -4,37 +4,38 @@ Version: 1.0
 Date: 2021-09-20
 Authors@R: c(
     person("Zheng", "Li", role = c("aut", "cre"), email = "zlisph@umich.edu"),
-    person("Xiang", "Zhou", role = c("aut")))
-Description: BASS is a computational method that performs transcriptomic 
-    analysis at two different scales. At the single-cell scale, BASS performs 
-    cell type clustering and clusters cells into multiple cell types. At the 
-    tissue regional scale, BASS segments tissues into tissue structures in a 
-    de novo fashion and characterizes the cell type composition in each 
-    detected tissue region separately. The analyses at the two different 
-    resolutions are performed in a coherent way through a Bayesian hierarchical 
-    model, which allows us to seamlessly integrate gene expression information 
-    with spatial information to improve analyses at both resolutions.
-Depends: 
-    R (>= 4.0.3),
-    GIGrvg,
-    mclust
+    person("Xiang", "Zhou", role = "aut")
+  )
+Description: BASS is a method for multi-scale and multi-sample analysis in
+    spatial transcriptomics. BASS performs multi-scale transcriptomic
+    analyses in the form of joint cell type clustering and spatial domain
+    detection, with the two analytic tasks carried out simultaneously
+    within a Bayesian hierarchical modeling framework. For both analyses,
+    BASS properly accounts for the spatial correlation structure and
+    seamlessly integrates gene expression information with spatial
+    localization information to improve their performance. In addition,
+    BASS is capable of multi-sample analysis that jointly models multiple
+    tissue sections/samples, facilitating the integration of spatial
+    transcriptomic data across tissue samples.
 License: GPL (>= 2)
+Depends: 
+    GIGrvg,
+    mclust,
+    R (>= 4.0.3)
 Imports: 
-    Rcpp (>= 1.0.7),
-    RcppArmadillo (>= 0.10.1.2.2),
     GIGrvg (>= 0.5),
+    harmony (>= 0.1.0),
     label.switching (>= 1.8),
     mclust (>= 5.4.7),
-    ggplot2 (>= 3.3.4),
-    dplyr (>= 1.0.8),
-    cowplot (>= 1.1.1),
-    gghighlight (>= 0.3.2),
-    scales (>= 1.1.1),
+    Rcpp (>= 1.0.8),
+    RcppArmadillo (>= 0.10.8.1.0),
     RcppDist (>= 0.1.1)
-biocViews:
-    scran (>= 1.18.3)
 LinkingTo: 
     Rcpp,
     RcppArmadillo,
     RcppDist
+Remotes:
+    xzhoulab/SPARK
+biocViews: scran (>= 1.20.0)
+Encoding: UTF-8
 RoxygenNote: 7.1.2

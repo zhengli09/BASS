@@ -3,68 +3,143 @@
 \docType{class}
 \name{BASS-class}
 \alias{BASS-class}
-\title{BASS object stores all the data and parameters used to run the algorithm}
+\title{BASS object}
 \description{
-BASS object stores all the data and parameters used to run the algorithm
+BASS object stores data, settings, hyper-parameters, MCMC controlling 
+parameters, and results for the spatial transcriptomic analysis.
 }
 \section{Slots}{
 
 \describe{
-\item{\code{X}}{L-list of raw gene expression matrix for L samples}
+\item{\code{X}}{An L-list of raw gene expression count matrices for L tissue 
+sections. For the lth tissue section, the matrix has dimension PxNl 
+representing P common genes shared across tissue sections and Nl 
+cells/spots in the lth tissue section.}
 
-\item{\code{X_run}}{N x J matrix of processed expression matrix for running BASS}
+\item{\code{X_run}}{An NxJ gene expression feature matrix obtained from 
+\code{BASS.preprocess} for running the BASS algorithm. Rows are cells from 
+all tissue sections and columns are low-dimensional gene expression 
+features. Modify this slot if you have pre-processed the data by yourself.}
 
-\item{\code{xy}}{L-list of location matrix for L samples}
+\item{\code{xy}}{An L-list of spatial coordinates matrices for L tissue sections.
+For the lth tissue section, the matrix has dimension Nlx2 representing the 
+same Nl cells/spots as in the expression count matrix and their x and y 
+spatial coordinates.}
 
-\item{\code{L}}{Number of samples}
+\item{\code{L}}{Numeric. Number of tissue sections.}
 
-\item{\code{P}}{Number of genes}
+\item{\code{P}}{Numeric. Number of genes.}
 
-\item{\code{Ns}}{L-list of number of cells/spots for L samples}
+\item{\code{Ns}}{Numeric Vector. Number of cells/spots in each of the L tissue 
+sections.}
 
-\item{\code{C}}{Number of cell types}
+\item{\code{C}}{Numeric. Number of cell types.}
 
-\item{\code{R}}{Number of spatial domains}
+\item{\code{R}}{Numeric. Number of spatial domains.}
 
-\item{\code{init_method}}{Initialization method for both cell types and 
-tissue structures}
+\item{\code{init_method}}{Character. Initialize the cell type clusters and spatial 
+domains with either k-means clustering (\code{kmeans}) or Gaussian mixture 
+model (\code{mclust}).}
 
-\item{\code{cov_struc}}{Covariance structure for gene expression features}
+\item{\code{cov_struc}}{Character. Variance-covariance structure for the gene 
+expression features. \code{EEE} assumes an unstructured and common 
+variance-covariance structure across cell types while \code{EII} assumes 
+the same independent variance-covariance structure across cell types.}
 
-\item{\code{kappa}}{Prior parameter of gene expression}
+\item{\code{kappa}}{Numeric. Prior parameter in the gene expression model when 
+\code{cov_struc} is set to be \code{EII}.
+That is x_ij | c_i = c ~ N(mu_c, sigma2 / kappa).}
 
-\item{\code{alpha0}}{Concentration parameter of Dirichlet distribution}
+\item{\code{a}}{Numeric. Shape parameter of the inverse-gamma prior on the variance 
+parameter when \code{cov_struc} is set to be \code{EII}.}
 
-\item{\code{a}}{Shape parameter of the inverse gamma prior}
+\item{\code{b}}{Numeric. Scale parameter of the inverse-gamma prior on the variance 
+parameter when \code{cov_struc} is set to be \code{EII}.}
 
-\item{\code{b}}{Scale parameter of the inverse gamma prior}
+\item{\code{w0}}{Numeric. w0*I is the scale matrix of the inverse-Wishart prior on 
+the variance-covariance matrix when \code{cov_struc} is set to be 
+\code{EEE}, where I is an identity matrix.}
 
-\item{\code{W0}}{W0*I represents the scale matrix of Wishart prior}
+\item{\code{n0}}{Numeric. Degrees of freedom of the inverse-Wishart prior on the 
+variance-covariance matrix when \code{cov_struc} is set to be \code{EEE}.}
 
-\item{\code{n0}}{Degrees of freedom of Wishart prior}
+\item{\code{alpha0}}{Numeric. Concentration parameter of the Dirichlet prior
+specified on the cell type composition vector in each spatial domain.}
 
-\item{\code{k}}{Number of neighbors for kNN graph}
+\item{\code{k}}{Numeric. Minimum number of neighbors for each cell/spot based on 
+the Euclidean distance.}
 
-\item{\code{burn_in}}{Number of burn-in iterations}
+\item{\code{burn_in}}{Numeric. Number of burn-in interactions in the MCMC algorithm.}
 
-\item{\code{samples}}{Number of posterior samples}
+\item{\code{samples}}{Numeric. Number of posterior samples in the MCMC algorithm.}
 
-\item{\code{beta_est_approach}}{Approach to estimate beta ("FIXED", "ACCUR_EST")}
+\item{\code{beta_est_appraoch}}{Character. Fix the cell-cell interaction parameter 
+to be \code{beta} (\code{FIXED}) or estimate the parameter based on the 
+data (\code{ACCUR_EST}) at hand.}
 
-\item{\code{beta}}{Fixed value of beta if the betaEstApproach is set to be "FIXED"}
+\item{\code{beta}}{Numeric. Pre-specified cell-cell interaction parameter if 
+\code{beta_est_appraoch} is set to be \code{FIXED}.}
 
-\item{\code{beta_max}}{upper bound of beta}
+\item{\code{beta_max}}{Numeric. Upper bound of the cell-cell interaction parameter.}
 
-\item{\code{epsilon}}{Uniform random walk step size}
+\item{\code{epsilon}}{Numeric. Step size of a uniform random walk.}
 
-\item{\code{beta_tol}}{tolerance for checking beta convergence}
+\item{\code{beta_tol}}{Numeric. Threshold of convergence for the cell-cell 
+interaction parameter.}
 
-\item{\code{B}}{Number of burn-in steps in Potts sampling}
+\item{\code{B}}{Numeric. Number of Potts samples to approximate the partition ratio.}
 
-\item{\code{M}}{Number of Potts samples to approximate Potts partition ratio}
+\item{\code{M}}{Numeric. Number of burn-in iterations in Potts sampling.}
 
-\item{\code{res}}{Result list}
+\item{\code{res}}{List. Posterior samples of all the parameters. The list contains:
+ \itemize{
+   \item mu: JxCxS array with each element (j, c, s) representing the mean 
+     of the jth feature in cell type c in the posterior sample s. 
+   \item sigma2: JxCxS array with each element (j, c, s) representing the 
+     variance of the jth feature in cell type c in the posterior sample s 
+     when \code{cov_struc} is set to be \code{EII}.
+   \item Sigma: JxJxS array with each slice s representing the JxJ 
+     variance-covariance matrix in the gene expression model in the 
+     posterior sample s when \code{cov_struc} is set to be \code{EEE}.
+   \item pi: CxRxS array with each element (c, r, s) representing the 
+     proportion of cell type c in spatial domain r in the posterior 
+     sample s.
+   \item z: NxS matrix of spatial domain labels with cells/spots as rows 
+     and posterior samples as columns. Cells/spots across all tissue 
+     sections have been stacked into a vector.
+   \item init_z: N-vector of initial spatial domain labels obtained using 
+     the method specified by \code{init_method}. Cells/spots across all 
+     tissue sections have been stacked into a vector.
+   \item c: NxS matrix of cell type labels with cells/spots as rows and 
+     posterior samples as columns. Cells/spots across all tissue sections 
+     have been stacked into a vector.
+   \item init_c: N-vector of initial cell type labels obtained using the 
+     method specified by \code{init_method}. Cells/spots across all tissue 
+     sections have been stacked into a vector.
+   \item burninBeta: Numeric. MCMC samples of the cell-cell interaction 
+     parameter \code{beta}.
+   \item beta: Numeric. Estimate of the cell-cell interaction parameter 
+     \code{beta}.
+   \item acceptBetaP: Numeric. Acceptance rate of the Metropolis-Hastings 
+     algorithm for sampling the cell-cell interaction parameter \code{beta}.
+   \item lambda: JxS matrix with each element (j, s) representing the jth 
+     feature-specific scaling factor of mu_jc in the posterior sample s.
+   \item d: JxS matrix with each element (j, s) representing the jth 
+     feature-specific prior mean of mu_jc in the posterior sample s.
+   \item R2: Jx1 matrix of squared ranges for each expression feature.
+ }
+Refer to the supplementary file of the paper for the details of all the 
+parameters.}
 
-\item{\code{res_postprocess}}{Result list after post-processing}
+\item{\code{res_postprocess}}{List. Estimates of cell type labels, spatial domain 
+labels, and cell type composition in each spatial domain after 
+post-processing the posterior samples in \code{res}. The list contains:
+\itemize{
+   \item c_ls: List. Cell type labels for each of the L tissue sections.
+   \item z_ls: List. Spatial domain labels for each of the L tissue 
+     sections.
+   \item p_ls: Matrix. CxR matrix with the cth row and rth column 
+     representing the proportion of cell type c in the spatial domain r.
+}}
 }}
 

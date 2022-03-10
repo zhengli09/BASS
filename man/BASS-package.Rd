@@ -3,32 +3,33 @@
 \alias{BASS}
 \docType{package}
 \title{
-  A short title line describing what the package does
+  Bayesian Analytics for Spatial Segmentation
 }
 \description{
-  A more detailed description of what the package does. A length
-  of about one to five lines is recommended.
+  This package implements the BASS method for multi-scale and multi-sample 
+  analysis in spatial transcriptomics.
 }
 \details{
-  This section should provide a more detailed overview of how to use the
-  package, including the most important functions.
+  BASS performs multi-scale transcriptomic analyses in the form of joint cell 
+  type clustering and spatial domain detection, with the two analytic tasks 
+  carried out simultaneously within a Bayesian hierarchical modeling framework. 
+  For both analyses, BASS properly accounts for the spatial correlation 
+  structure and seamlessly integrates gene expression information with spatial 
+  localization information to improve their performance. In addition, BASS is 
+  capable of multi-sample analysis that jointly models multiple tissue 
+  sections/samples, facilitating the integration of spatial transcriptomic 
+  data across tissue samples.
 }
 \author{
-Your Name, email optional.
+Zheng Li, Xiang Zhou
 
-Maintainer: Your Name <your@email.com>
+Maintainer: Zheng Li <zlisph@umich.edu>
 }
 \references{
-  This optional section can contain literature or other references for
-  background information.
+  Multi-scale and multi-sample analysis enables accurate cell type clustering
+  and spatial domain detection in spatial transcriptomic studies
 }
 \keyword{ package }
 \seealso{
-  Optional links to other man pages
-}
-\examples{
-  \dontrun{
-     ## Optional simple examples of the most important functions
-     ## These can be in \dontrun{} and \donttest{} blocks.   
-  }
+  \href{https://zhengli09.github.io/BASS-Analysis/index.html}{BASS vignettes}
 }

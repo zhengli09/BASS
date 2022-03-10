@@ -2,7 +2,7 @@
 % Please edit documentation in R/BASS.R
 \name{createBASSObject}
 \alias{createBASSObject}
-\title{Create BASS object}
+\title{Create a BASS object}
 \usage{
 createBASSObject(
   X,
@@ -12,11 +12,11 @@ createBASSObject(
   init_method = c("kmeans", "mclust"),
   cov_struc = c("EEE", "EII"),
   kappa = 0.01,
-  alpha0 = 1,
-  a = 2,
-  b = 1,
-  W0 = 1,
+  a = 0.01,
+  b = 0.01,
+  w0 = 1,
   n0 = 1,
+  alpha0 = 1,
   k = 4,
   burn_in = 10000,
   samples = 10000,
@@ -29,6 +29,80 @@ createBASSObject(
   M = 100
 )
 }
+\arguments{
+\item{X}{An L-list of gene expression count matrices for L tissue sections.
+For the lth tissue section, the matrix has dimension PxNl representing P 
+common genes shared across tissue sections and Nl cells/spots in the
+lth tissue section.}
+
+\item{xy}{An L-list of spatial coordinates matrices for L tissue sections.
+For the lth tissue section, the matrix has dimension Nlx2 representing the 
+same Nl cells/spots as in the expression count matrix and their x and y 
+spatial coordinates.}
+
+\item{C}{Numeric. Number of cell types.}
+
+\item{R}{Numeric. Number of spatial domains.}
+
+\item{init_method}{Character. Initialize the cell type clusters and spatial 
+domains with either k-means clustering (\code{kmeans}) or Gaussian mixture 
+model (\code{mclust}).}
+
+\item{cov_struc}{Character. Variance-covariance structure for the gene 
+expression features. \code{EEE} assumes an unstructured and common 
+variance-covariance structure across cell types while \code{EII} assumes 
+the same independent variance-covariance structure across cell types.}
+
+\item{kappa}{Numeric. Prior parameter in the gene expression model when 
+\code{cov_struc} is set to be \code{EII}.
+That is x_ij | c_i = c ~ N(mu_c, sigma2 / kappa).}
+
+\item{a}{Numeric. Shape parameter of the inverse-gamma prior on the variance 
+parameter when \code{cov_struc} is set to be \code{EII}.}
+
+\item{b}{Numeric. Scale parameter of the inverse-gamma prior on the variance 
+parameter when \code{cov_struc} is set to be \code{EII}.}
+
+\item{w0}{Numeric. w0*I is the scale matrix of the inverse-Wishart prior on 
+the variance-covariance matrix when \code{cov_struc} is set to be 
+\code{EEE}, where I is an identity matrix.}
+
+\item{n0}{Numeric. Degrees of freedom of the inverse-Wishart prior on the 
+variance-covariance matrix when \code{cov_struc} is set to be \code{EEE}.}
+
+\item{alpha0}{Numeric. Concentration parameter of the Dirichlet prior
+specified on the cell type composition vector in each spatial domain.}
+
+\item{k}{Numeric. Minimum number of neighbors for each cell/spot based on 
+the Euclidean distance.}
+
+\item{burn_in}{Numeric. Number of burn-in interactions in the MCMC algorithm.}
+
+\item{samples}{Numeric. Number of posterior samples in the MCMC algorithm.}
+
+\item{beta}{Numeric. Pre-specified cell-cell interaction parameter if 
+\code{beta_est_appraoch} is set to be \code{FIXED}.}
+
+\item{beta_max}{Numeric. Upper bound of the cell-cell interaction parameter.}
+
+\item{epsilon}{Numeric. Step size of a uniform random walk.}
+
+\item{beta_tol}{Numeric. Threshold of convergence for the cell-cell 
+interaction parameter.}
+
+\item{B}{Numeric. Number of Potts samples to approximate the partition ratio.}
+
+\item{M}{Numeric. Number of burn-in iterations in Potts sampling.}
+
+\item{beta_est_appraoch}{Character. Fix the cell-cell interaction parameter 
+to be \code{beta} (\code{FIXED}) or estimate the parameter based on the 
+data (\code{ACCUR_EST}) at hand.}
+}
+\value{
+A BASS object. Refer to \linkS4class{BASS} for a complete list of
+  slots in the object.
+}
 \description{
-Create BASS object
+Create a BASS object to store data, settings, hyper-parameters, MCMC 
+controlling parameters, and results for the spatial transcriptomic analysis.
 }

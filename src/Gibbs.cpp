@@ -1,13 +1,6 @@
 // Zheng Li
 // 2020-08-13
-// Gibbs sampler of a full bayesian spatial domain segmentation model
-// Bayesian Analytics for Spatial Segmentation (BASS)
-// Change log:
-// 2021-01-02: Cannot use std::vector.pushback(Rcpp::NumericMatrix), this is pass-by-reference
-//             and all the values will be the last one. Instead, use cube data structure in 
-//             Armadillo.
-// 2021-04-18: Extend BASS to multiple samples
-// 2021-04-18: Wrapped parameter updates into one function "updateAll"
+// Gibbs sampler for BASS model
 
 #include "compPartitionRatio.h"
 #include "GibbsFuncs.h"
@@ -19,36 +12,36 @@ using namespace Rcpp;
 
 // [[Rcpp::export]]
 Rcpp::List Gibbs(
-  const Rcpp::NumericMatrix Xin, // N x J gene expression matrix
-  Rcpp::NumericMatrix xy, // N x 2 coordinates
-  const Rcpp::IntegerVector Ns, // L x 1 vector of sample sizes
-  const int C, // number of cell types
-  const int R, // number of spatial domains
-  Rcpp::String initMethod, // initialization method for c and z
-  Rcpp::String covStruc, // covariance structure for expression features
-  const double kappa, // prior parameter of gene expression (not used)
-  const double alpha0, // concentration parameter of Dirichlet distribution
-  const double a, // shape parameter of inverse gamma prior
-  const double b, // scale parameter of inverse gamma prior
-  const Rcpp::NumericMatrix W0in, // scale matrix of Wishart prior
-  const int n0, // degrees of freedom of Wishart prior
-  const int k, // number of neighbors for kNN graph
-  const int warmUp, // number of burn-in iterations
-  const int numSamples, // number of posterior samples
-  Rcpp::String betaEstApproach, // approach to estimate beta
-  const double betaIn, // fixed value of beta if the betaEstApproach is set to be "FIXED"
-  const double betaMax, // upper bound of beta
-  const double epsilon, // uniform random walk step size
-  const double betaTol, // tolerance for checking beta convergence
-  const int M, // Monte Carlo iterations to approximate partition ratio
-  const int B // number of burn-in steps in Potts sampling
+  const Rcpp::NumericMatrix Xin,
+  Rcpp::NumericMatrix xy,
+  const Rcpp::IntegerVector Ns,
+  const int C,
+  const int R,
+  Rcpp::String initMethod,
+  Rcpp::String covStruc,
+  const double kappa,
+  const double alpha0,
+  const double a,
+  const double b,
+  const Rcpp::NumericMatrix W0in,
+  const int n0,
+  const int k,
+  const int warmUp,
+  const int numSamples,
+  Rcpp::String betaEstApproach,
+  const double betaIn,
+  const double betaMax,
+  const double epsilon,
+  const double betaTol,
+  const int M,
+  const int B
   )
 {
   arma::mat X = Rcpp::as<arma::mat>(Xin);
   arma::mat W0inv = arma::inv(Rcpp::as<arma::mat>(W0in));
-  int N = X.n_rows; // total number of cells in L samples
-  int J = X.n_cols; // number of genes shared across L samples
-  int L = Ns.length(); // number of samples
+  int N = X.n_rows; // total number of cells/spots in L tissue sections
+  int J = X.n_cols; // number of gene expression features
+  int L = Ns.length(); // number of tissue sections
   Rcpp::IntegerVector smpIdx = Rcpp::cumsum(Ns);
   smpIdx.push_front(0);
 

@@ -2,10 +2,21 @@
 % Please edit documentation in R/BASS.R
 \name{BASS.run}
 \alias{BASS.run}
-\title{Run BASS algorithm}
+\title{Run BASS inference algorithm}
 \usage{
 BASS.run(BASS)
 }
+\arguments{
+\item{BASS}{A BASS object containing the pre-processed gene expression data 
+in the \code{X_run} slot. The pre-processing can be conducted either with 
+the provided \code{BASS.preprocess} function or by the users.}
+}
+\value{
+A BASS object with posterior samples of all the parameters stored in 
+  the \code{res} slot. Refer to \linkS4class{BASS} for details of the 
+  \code{res} slot and a complete list of slots in the object.
+}
 \description{
-Run BASS algorithm
+Run the Gibbs sampling algorithm in combination with the Metroplis-Hastings 
+algorithm to perform parameter inference.
 }

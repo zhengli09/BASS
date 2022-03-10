@@ -2,10 +2,14 @@
 % Please edit documentation in R/BASS.R
 \name{listAllHyper}
 \alias{listAllHyper}
-\title{List all hyper-paramters of BASS}
+\title{Show BASS settings}
 \usage{
 listAllHyper(BASS)
 }
+\arguments{
+\item{BASS}{A BASS object created by \code{createBASSObject}.}
+}
 \description{
-List all hyper-paramters of BASS
+Show a complete list of settings, hyper-parameters, and MCMC controlling
+parameters used by BASS.
 }

@@ -2,10 +2,24 @@
 % Please edit documentation in R/BASS.R
 \name{BASS.postprocess}
 \alias{BASS.postprocess}
-\title{Postprocess BASS results}
+\title{Post-process the posterior sampling results}
 \usage{
 BASS.postprocess(BASS)
 }
+\arguments{
+\item{BASS}{A BASS object output from \code{BASS.run}.}
+}
+\value{
+A BASS object with the final estimates of cell type labels, spatial 
+  domain labels, and cell type composition in each spatial domain stored in 
+  the \code{res_postprocess} slot. Refer to \linkS4class{BASS} for details of 
+  the \code{res_postprocess} slot and a complete list of slots in the object.
+}
 \description{
-Postprocess BASS results
+Post-process the posterior sampling results to address the label switching 
+issue associated with the sampling of cell type labels and spatial domain 
+labels based on the ECR-1 algorithm, estimate the cell type labels and 
+spatial domain labels as the mode of all their posterior samples, and 
+estimate the cell type composition in each spatial domain based on the final 
+estimates of cell type and spatial domain labels.
 }
