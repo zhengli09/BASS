@@ -29,7 +29,8 @@ Imports:
     mclust (>= 5.4.7),
     Rcpp (>= 1.0.8),
     RcppArmadillo (>= 0.10.8.1.0),
-    RcppDist (>= 0.1.1)
+    RcppDist (>= 0.1.1),
+    SPARK (>= 1.1.1)
 LinkingTo: 
     Rcpp,
     RcppArmadillo,
