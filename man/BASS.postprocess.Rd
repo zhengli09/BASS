@@ -12,8 +12,8 @@ BASS.postprocess(BASS)
 \value{
 A BASS object with the final estimates of cell type labels, spatial 
   domain labels, and cell type composition in each spatial domain stored in 
-  the \code{res_postprocess} slot. Refer to \linkS4class{BASS} for details of 
-  the \code{res_postprocess} slot and a complete list of slots in the object.
+  the \code{results} slot. Refer to \linkS4class{BASS} for details of the 
+  \code{results} slot and a complete list of slots in the object.
 }
 \description{
 Post-process the posterior sampling results to address the label switching 

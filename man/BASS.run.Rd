@@ -13,8 +13,8 @@ the provided \code{BASS.preprocess} function or by the users.}
 }
 \value{
 A BASS object with posterior samples of all the parameters stored in 
-  the \code{res} slot. Refer to \linkS4class{BASS} for details of the 
-  \code{res} slot and a complete list of slots in the object.
+  the \code{samples} slot. Refer to \linkS4class{BASS} for details of the 
+  \code{samples} slot and a complete list of slots in the object.
 }
 \description{
 Run the Gibbs sampling algorithm in combination with the Metroplis-Hastings 

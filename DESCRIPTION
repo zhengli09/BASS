@@ -1,7 +1,7 @@
 Package: BASS
 Title: Bayesian Analytics for Spatial Segmentation
-Version: 1.0
-Date: 2021-09-20
+Version: 1.1
+Date: 2022-05-31
 Authors@R: c(
     person("Zheng", "Li", role = c("aut", "cre"), email = "zlisph@umich.edu"),
     person("Xiang", "Zhou", role = "aut")
@@ -20,10 +20,10 @@ Description: BASS is a method for multi-scale and multi-sample analysis in
 License: GPL (>= 2)
 Depends: 
     GIGrvg,
-    mclust,
     R (>= 4.0.3)
 Imports: 
     GIGrvg (>= 0.5),
+    Matrix (>= 1.3.4),
     harmony (>= 0.1.0),
     label.switching (>= 1.8),
     mclust (>= 5.4.7),
@@ -37,6 +37,8 @@ LinkingTo:
     RcppDist
 Remotes:
     xzhoulab/SPARK
-biocViews: scran (>= 1.20.0)
+biocViews: 
+    scran (>= 1.20.0),
+    scater (>= 1.16.2)
 Encoding: UTF-8
 RoxygenNote: 7.1.2

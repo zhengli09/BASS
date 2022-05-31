@@ -10,23 +10,18 @@ createBASSObject(
   C,
   R,
   init_method = c("kmeans", "mclust"),
-  cov_struc = c("EEE", "EII"),
-  kappa = 0.01,
-  a = 0.01,
-  b = 0.01,
-  w0 = 1,
+  psi0 = 1,
   n0 = 1,
   alpha0 = 1,
   k = 4,
-  burn_in = 10000,
-  samples = 10000,
-  beta_est_approach = c("FIXED", "ACCUR_EST"),
+  burnin = 2000,
+  nsample = 5000,
+  beta_method = c("fix", "SW"),
   beta = 1,
-  beta_max = 4,
-  epsilon = 0.1,
-  beta_tol = 0.1,
-  B = 100,
-  M = 100
+  step_size = 0.1,
+  tol = 0.001,
+  potts_burnin = 10,
+  potts_nsample = 10
 )
 }
 \arguments{
@@ -48,27 +43,11 @@ spatial coordinates.}
 domains with either k-means clustering (\code{kmeans}) or Gaussian mixture 
 model (\code{mclust}).}
 
-\item{cov_struc}{Character. Variance-covariance structure for the gene 
-expression features. \code{EEE} assumes an unstructured and common 
-variance-covariance structure across cell types while \code{EII} assumes 
-the same independent variance-covariance structure across cell types.}
+\item{psi0}{Numeric. psi0*I is the scale matrix of the inv-Wishart prior on 
+the variance-covariance matrix, where I is an identity matrix.}
 
-\item{kappa}{Numeric. Prior parameter in the gene expression model when 
-\code{cov_struc} is set to be \code{EII}.
-That is x_ij | c_i = c ~ N(mu_c, sigma2 / kappa).}
-
-\item{a}{Numeric. Shape parameter of the inverse-gamma prior on the variance 
-parameter when \code{cov_struc} is set to be \code{EII}.}
-
-\item{b}{Numeric. Scale parameter of the inverse-gamma prior on the variance 
-parameter when \code{cov_struc} is set to be \code{EII}.}
-
-\item{w0}{Numeric. w0*I is the scale matrix of the inverse-Wishart prior on 
-the variance-covariance matrix when \code{cov_struc} is set to be 
-\code{EEE}, where I is an identity matrix.}
-
-\item{n0}{Numeric. Degrees of freedom of the inverse-Wishart prior on the 
-variance-covariance matrix when \code{cov_struc} is set to be \code{EEE}.}
+\item{n0}{Numeric. Degrees of freedom of the inv-Wishart prior on the 
+variance-covariance matrix.}
 
 \item{alpha0}{Numeric. Concentration parameter of the Dirichlet prior
 specified on the cell type composition vector in each spatial domain.}
@@ -76,27 +55,26 @@ specified on the cell type composition vector in each spatial domain.}
 \item{k}{Numeric. Minimum number of neighbors for each cell/spot based on 
 the Euclidean distance.}
 
-\item{burn_in}{Numeric. Number of burn-in interactions in the MCMC algorithm.}
+\item{burnin}{Numeric. Number of burn-in iterations in the MCMC.}
 
-\item{samples}{Numeric. Number of posterior samples in the MCMC algorithm.}
+\item{nsample}{Numeric. Number of posterior samples in the MCMC.}
+
+\item{beta_method}{Character. Fix the cell-cell interaction parameter 
+to be \code{beta} (\code{fix}) or estimate the parameter based on the 
+data at hand (\code{SW}) .}
 
 \item{beta}{Numeric. Pre-specified cell-cell interaction parameter if 
-\code{beta_est_appraoch} is set to be \code{FIXED}.}
+\code{beta_method} is set to be \code{fix} or otherwise its initial value.}
 
-\item{beta_max}{Numeric. Upper bound of the cell-cell interaction parameter.}
+\item{step_size}{Numeric. Step size of a uniform random walk.}
 
-\item{epsilon}{Numeric. Step size of a uniform random walk.}
+\item{tol}{Numeric. Threshold of convergence for the cell-cell interaction 
+parameter.}
 
-\item{beta_tol}{Numeric. Threshold of convergence for the cell-cell 
-interaction parameter.}
+\item{potts_burnin}{Numeric. Number of burn-in iterations in Potts sampling.}
 
-\item{B}{Numeric. Number of Potts samples to approximate the partition ratio.}
-
-\item{M}{Numeric. Number of burn-in iterations in Potts sampling.}
-
-\item{beta_est_appraoch}{Character. Fix the cell-cell interaction parameter 
-to be \code{beta} (\code{FIXED}) or estimate the parameter based on the 
-data (\code{ACCUR_EST}) at hand.}
+\item{potts_nsample}{Numeric. Number of Potts samples to approximate the 
+partition ratio.}
 }
 \value{
 A BASS object. Refer to \linkS4class{BASS} for a complete list of

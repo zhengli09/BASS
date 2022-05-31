@@ -11,107 +11,39 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
-// Gibbs
-Rcpp::List Gibbs(const Rcpp::NumericMatrix Xin, Rcpp::NumericMatrix xy, const Rcpp::IntegerVector Ns, const int C, const int R, Rcpp::String initMethod, Rcpp::String covStruc, const double kappa, const double alpha0, const double a, const double b, const Rcpp::NumericMatrix W0in, const int n0, const int k, const int warmUp, const int numSamples, Rcpp::String betaEstApproach, const double betaIn, const double betaMax, const double epsilon, const double betaTol, const int M, const int B);
-RcppExport SEXP _BASS_Gibbs(SEXP XinSEXP, SEXP xySEXP, SEXP NsSEXP, SEXP CSEXP, SEXP RSEXP, SEXP initMethodSEXP, SEXP covStrucSEXP, SEXP kappaSEXP, SEXP alpha0SEXP, SEXP aSEXP, SEXP bSEXP, SEXP W0inSEXP, SEXP n0SEXP, SEXP kSEXP, SEXP warmUpSEXP, SEXP numSamplesSEXP, SEXP betaEstApproachSEXP, SEXP betaInSEXP, SEXP betaMaxSEXP, SEXP epsilonSEXP, SEXP betaTolSEXP, SEXP MSEXP, SEXP BSEXP) {
+// BASSFit
+List BASSFit(const arma::mat X, const arma::mat xy, const arma::vec ns, const int C, const int R, const int k, const double alpha0, const arma::mat Psi0, const int n0, const int burnin, const int nsample, const String method, const int potts_burnin, const int potts_nsample, const double step_size, const double tol, const arma::uvec init_c, const arma::uvec init_z, const arma::mat init_mu, const double init_beta);
+RcppExport SEXP _BASS_BASSFit(SEXP XSEXP, SEXP xySEXP, SEXP nsSEXP, SEXP CSEXP, SEXP RSEXP, SEXP kSEXP, SEXP alpha0SEXP, SEXP Psi0SEXP, SEXP n0SEXP, SEXP burninSEXP, SEXP nsampleSEXP, SEXP methodSEXP, SEXP potts_burninSEXP, SEXP potts_nsampleSEXP, SEXP step_sizeSEXP, SEXP tolSEXP, SEXP init_cSEXP, SEXP init_zSEXP, SEXP init_muSEXP, SEXP init_betaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Rcpp::NumericMatrix >::type Xin(XinSEXP);
-    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type xy(xySEXP);
-    Rcpp::traits::input_parameter< const Rcpp::IntegerVector >::type Ns(NsSEXP);
+    Rcpp::traits::input_parameter< const arma::mat >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const arma::mat >::type xy(xySEXP);
+    Rcpp::traits::input_parameter< const arma::vec >::type ns(nsSEXP);
     Rcpp::traits::input_parameter< const int >::type C(CSEXP);
     Rcpp::traits::input_parameter< const int >::type R(RSEXP);
-    Rcpp::traits::input_parameter< Rcpp::String >::type initMethod(initMethodSEXP);
-    Rcpp::traits::input_parameter< Rcpp::String >::type covStruc(covStrucSEXP);
-    Rcpp::traits::input_parameter< const double >::type kappa(kappaSEXP);
-    Rcpp::traits::input_parameter< const double >::type alpha0(alpha0SEXP);
-    Rcpp::traits::input_parameter< const double >::type a(aSEXP);
-    Rcpp::traits::input_parameter< const double >::type b(bSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::NumericMatrix >::type W0in(W0inSEXP);
-    Rcpp::traits::input_parameter< const int >::type n0(n0SEXP);
     Rcpp::traits::input_parameter< const int >::type k(kSEXP);
-    Rcpp::traits::input_parameter< const int >::type warmUp(warmUpSEXP);
-    Rcpp::traits::input_parameter< const int >::type numSamples(numSamplesSEXP);
-    Rcpp::traits::input_parameter< Rcpp::String >::type betaEstApproach(betaEstApproachSEXP);
-    Rcpp::traits::input_parameter< const double >::type betaIn(betaInSEXP);
-    Rcpp::traits::input_parameter< const double >::type betaMax(betaMaxSEXP);
-    Rcpp::traits::input_parameter< const double >::type epsilon(epsilonSEXP);
-    Rcpp::traits::input_parameter< const double >::type betaTol(betaTolSEXP);
-    Rcpp::traits::input_parameter< const int >::type M(MSEXP);
-    Rcpp::traits::input_parameter< const int >::type B(BSEXP);
-    rcpp_result_gen = Rcpp::wrap(Gibbs(Xin, xy, Ns, C, R, initMethod, covStruc, kappa, alpha0, a, b, W0in, n0, k, warmUp, numSamples, betaEstApproach, betaIn, betaMax, epsilon, betaTol, M, B));
-    return rcpp_result_gen;
-END_RCPP
-}
-// avgNeighbors
-double avgNeighbors(const double r, const Rcpp::NumericMatrix& coord);
-RcppExport SEXP _BASS_avgNeighbors(SEXP rSEXP, SEXP coordSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const double >::type r(rSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::NumericMatrix& >::type coord(coordSEXP);
-    rcpp_result_gen = Rcpp::wrap(avgNeighbors(r, coord));
-    return rcpp_result_gen;
-END_RCPP
-}
-// testFastBetaEst
-Rcpp::List testFastBetaEst(const Rcpp::IntegerVector x, const Rcpp::NumericMatrix coord, const double r, double beta, const double epsilon, const int S, const Rcpp::NumericMatrix NHC);
-RcppExport SEXP _BASS_testFastBetaEst(SEXP xSEXP, SEXP coordSEXP, SEXP rSEXP, SEXP betaSEXP, SEXP epsilonSEXP, SEXP SSEXP, SEXP NHCSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Rcpp::IntegerVector >::type x(xSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::NumericMatrix >::type coord(coordSEXP);
-    Rcpp::traits::input_parameter< const double >::type r(rSEXP);
-    Rcpp::traits::input_parameter< double >::type beta(betaSEXP);
-    Rcpp::traits::input_parameter< const double >::type epsilon(epsilonSEXP);
-    Rcpp::traits::input_parameter< const int >::type S(SSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::NumericMatrix >::type NHC(NHCSEXP);
-    rcpp_result_gen = Rcpp::wrap(testFastBetaEst(x, coord, r, beta, epsilon, S, NHC));
-    return rcpp_result_gen;
-END_RCPP
-}
-// testPottsSampling
-Rcpp::List testPottsSampling(const Rcpp::NumericMatrix coord, const double r, const double beta, const int R, const int M);
-RcppExport SEXP _BASS_testPottsSampling(SEXP coordSEXP, SEXP rSEXP, SEXP betaSEXP, SEXP RSEXP, SEXP MSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Rcpp::NumericMatrix >::type coord(coordSEXP);
-    Rcpp::traits::input_parameter< const double >::type r(rSEXP);
-    Rcpp::traits::input_parameter< const double >::type beta(betaSEXP);
-    Rcpp::traits::input_parameter< const int >::type R(RSEXP);
-    Rcpp::traits::input_parameter< const int >::type M(MSEXP);
-    rcpp_result_gen = Rcpp::wrap(testPottsSampling(coord, r, beta, R, M));
-    return rcpp_result_gen;
-END_RCPP
-}
-// testPostBeta
-Rcpp::List testPostBeta(const Rcpp::IntegerVector x, const Rcpp::NumericMatrix coord, const int R, double beta, const double epsilon, const int M, const int S);
-RcppExport SEXP _BASS_testPostBeta(SEXP xSEXP, SEXP coordSEXP, SEXP RSEXP, SEXP betaSEXP, SEXP epsilonSEXP, SEXP MSEXP, SEXP SSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Rcpp::IntegerVector >::type x(xSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::NumericMatrix >::type coord(coordSEXP);
-    Rcpp::traits::input_parameter< const int >::type R(RSEXP);
-    Rcpp::traits::input_parameter< double >::type beta(betaSEXP);
-    Rcpp::traits::input_parameter< const double >::type epsilon(epsilonSEXP);
-    Rcpp::traits::input_parameter< const int >::type M(MSEXP);
-    Rcpp::traits::input_parameter< const int >::type S(SSEXP);
-    rcpp_result_gen = Rcpp::wrap(testPostBeta(x, coord, R, beta, epsilon, M, S));
+    Rcpp::traits::input_parameter< const double >::type alpha0(alpha0SEXP);
+    Rcpp::traits::input_parameter< const arma::mat >::type Psi0(Psi0SEXP);
+    Rcpp::traits::input_parameter< const int >::type n0(n0SEXP);
+    Rcpp::traits::input_parameter< const int >::type burnin(burninSEXP);
+    Rcpp::traits::input_parameter< const int >::type nsample(nsampleSEXP);
+    Rcpp::traits::input_parameter< const String >::type method(methodSEXP);
+    Rcpp::traits::input_parameter< const int >::type potts_burnin(potts_burninSEXP);
+    Rcpp::traits::input_parameter< const int >::type potts_nsample(potts_nsampleSEXP);
+    Rcpp::traits::input_parameter< const double >::type step_size(step_sizeSEXP);
+    Rcpp::traits::input_parameter< const double >::type tol(tolSEXP);
+    Rcpp::traits::input_parameter< const arma::uvec >::type init_c(init_cSEXP);
+    Rcpp::traits::input_parameter< const arma::uvec >::type init_z(init_zSEXP);
+    Rcpp::traits::input_parameter< const arma::mat >::type init_mu(init_muSEXP);
+    Rcpp::traits::input_parameter< const double >::type init_beta(init_betaSEXP);
+    rcpp_result_gen = Rcpp::wrap(BASSFit(X, xy, ns, C, R, k, alpha0, Psi0, n0, burnin, nsample, method, potts_burnin, potts_nsample, step_size, tol, init_c, init_z, init_mu, init_beta));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_BASS_Gibbs", (DL_FUNC) &_BASS_Gibbs, 23},
-    {"_BASS_avgNeighbors", (DL_FUNC) &_BASS_avgNeighbors, 2},
-    {"_BASS_testFastBetaEst", (DL_FUNC) &_BASS_testFastBetaEst, 7},
-    {"_BASS_testPottsSampling", (DL_FUNC) &_BASS_testPottsSampling, 5},
-    {"_BASS_testPostBeta", (DL_FUNC) &_BASS_testPostBeta, 7},
+    {"_BASS_BASSFit", (DL_FUNC) &_BASS_BASSFit, 20},
     {NULL, NULL, 0}
 };
 

@@ -9,9 +9,9 @@
 #'   sections. For the lth tissue section, the matrix has dimension PxNl 
 #'   representing P common genes shared across tissue sections and Nl 
 #'   cells/spots in the lth tissue section.
-#' @slot X_run An NxJ gene expression feature matrix obtained from 
-#'   \code{BASS.preprocess} for running the BASS algorithm. Rows are cells from 
-#'   all tissue sections and columns are low-dimensional gene expression 
+#' @slot X_run A JxN gene expression feature matrix obtained from 
+#'   \code{BASS.preprocess} for running the BASS algorithm. Columns are cells 
+#'   from all tissue sections and rows are low-dimensional gene expression 
 #'   features. Modify this slot if you have pre-processed the data by yourself.
 #' @slot xy An L-list of spatial coordinates matrices for L tissue sections.
 #'  For the lth tissue section, the matrix has dimension Nlx2 representing the 
@@ -19,95 +19,80 @@
 #'  spatial coordinates.
 #' @slot L Numeric. Number of tissue sections.
 #' @slot P Numeric. Number of genes.
-#' @slot Ns Numeric Vector. Number of cells/spots in each of the L tissue 
+#' @slot Ns Numeric vector. Number of cells/spots in each of the L tissue 
 #'   sections.
 #' @slot C Numeric. Number of cell types.
 #' @slot R Numeric. Number of spatial domains.
 #' @slot init_method Character. Initialize the cell type clusters and spatial 
 #'   domains with either k-means clustering (\code{kmeans}) or Gaussian mixture 
 #'   model (\code{mclust}).
-#' @slot cov_struc Character. Variance-covariance structure for the gene 
-#'   expression features. \code{EEE} assumes an unstructured and common 
-#'   variance-covariance structure across cell types while \code{EII} assumes 
-#'   the same independent variance-covariance structure across cell types.
-#' @slot kappa Numeric. Prior parameter in the gene expression model when 
-#'   \code{cov_struc} is set to be \code{EII}.
-#'   That is x_ij | c_i = c ~ N(mu_c, sigma2 / kappa).
-#' @slot a Numeric. Shape parameter of the inverse-gamma prior on the variance 
-#'   parameter when \code{cov_struc} is set to be \code{EII}.
-#' @slot b Numeric. Scale parameter of the inverse-gamma prior on the variance 
-#'   parameter when \code{cov_struc} is set to be \code{EII}.
-#' @slot w0 Numeric. w0*I is the scale matrix of the inverse-Wishart prior on 
-#'   the variance-covariance matrix when \code{cov_struc} is set to be 
-#'   \code{EEE}, where I is an identity matrix.
-#' @slot n0 Numeric. Degrees of freedom of the inverse-Wishart prior on the 
-#'   variance-covariance matrix when \code{cov_struc} is set to be \code{EEE}.
+#' @slot psi0 Numeric. psi0*I is the scale matrix of the inv-Wishart prior on 
+#'   the variance-covariance matrix, where I is an identity matrix.
+#' @slot n0 Numeric. Degrees of freedom of the inv-Wishart prior on the 
+#'   variance-covariance matrix.
 #' @slot alpha0 Numeric. Concentration parameter of the Dirichlet prior  
 #'   specified on the cell type composition vector in each spatial domain.
-#' @slot  k Numeric. Minimum number of neighbors for each cell/spot based on 
+#' @slot k Numeric. Minimum number of neighbors for each cell/spot based on 
 #'   the Euclidean distance.
-#' @slot burn_in Numeric. Number of burn-in interactions in the MCMC algorithm.
-#' @slot samples Numeric. Number of posterior samples in the MCMC algorithm.
-#' @slot beta_est_appraoch Character. Fix the cell-cell interaction parameter 
-#'   to be \code{beta} (\code{FIXED}) or estimate the parameter based on the 
-#'   data (\code{ACCUR_EST}) at hand.
+#' @slot burnin Numeric. Number of burn-in iterations in the MCMC.
+#' @slot nsample Numeric. Number of posterior samples in the MCMC.
+#' @slot beta_method Character. Fix the cell-cell interaction parameter 
+#'   to be \code{beta} (\code{fix}) or estimate the parameter based on the 
+#'   data at hand (\code{SW}).
 #' @slot  beta Numeric. Pre-specified cell-cell interaction parameter if 
-#'   \code{beta_est_appraoch} is set to be \code{FIXED}.
-#' @slot  beta_max Numeric. Upper bound of the cell-cell interaction parameter.
-#' @slot epsilon Numeric. Step size of a uniform random walk.
-#' @slot beta_tol Numeric. Threshold of convergence for the cell-cell 
+#'   \code{beta_method} is set to be \code{fix} or otherwise its initial value.
+#' @slot step_size Numeric. Step size of a uniform random walk.
+#' @slot tol Numeric. Threshold of convergence for the cell-cell 
 #'   interaction parameter.
-#' @slot B Numeric. Number of Potts samples to approximate the partition ratio.
-#' @slot M Numeric. Number of burn-in iterations in Potts sampling. 
-#' @slot res List. Posterior samples of all the parameters. The list contains:
+#' @slot potts_burnin Numeric. Number of burn-in iterations in Potts sampling.
+#' @slot potts_nsample Numeric. Number of Potts samples to approximate the 
+#'   partition ratio.
+#' @slot samples List. Samples from the MCMC. The list contains:
 #'   \itemize{
-#'     \item mu: JxCxS array with each element (j, c, s) representing the mean 
-#'       of the jth feature in cell type c in the posterior sample s. 
-#'     \item sigma2: JxCxS array with each element (j, c, s) representing the 
-#'       variance of the jth feature in cell type c in the posterior sample s 
-#'       when \code{cov_struc} is set to be \code{EII}.
-#'     \item Sigma: JxJxS array with each slice s representing the JxJ 
-#'       variance-covariance matrix in the gene expression model in the 
-#'       posterior sample s when \code{cov_struc} is set to be \code{EEE}.
+#'     \item c: NxS matrix of cell type labels with cells/spots as rows and 
+#'       posterior samples as columns. Cells/spots across all tissue sections 
+#'       have been stacked into a vector.
+#'     \item z: NxS matrix of spatial domain labels with cells/spots as rows 
+#'       and posterior samples as columns. Cells/spots across all tissue 
+#'       sections have been stacked into a vector.
+#'     \item beta: Numeric. Burn-in samples of the cell-cell interaction 
+#'       parameter \code{beta}.
 #'     \item pi: CxRxS array with each element (c, r, s) representing the 
 #'       proportion of cell type c in spatial domain r in the posterior 
 #'       sample s.
-#'     \item z: NxS matrix of spatial domain labels with cells/spots as rows 
-#'       and posterior samples as columns. Cells/spots across all tissue 
+#'     \item mu: JxCxS array with each element (j, c, s) representing the mean 
+#'       of the jth feature in cell type c in the posterior sample s. 
+#'     \item Sigma: JxJxS array with each slice s representing the JxJ 
+#'       variance-covariance matrix in the gene expression model in the 
+#'       posterior sample s.
+#'     \item d: JxS matrix with each element (j, s) representing the jth 
+#'       feature-specific prior mean of mu_jc in the posterior sample s.
+#'     \item lambda: JxS matrix with each element (j, s) representing the jth 
+#'       feature-specific scaling factor of mu_jc in the posterior sample s.
+#'     \item loglik: log-likelihood in each MCMC iteration.
+#'   }
+#'  Refer to the supplementary file of the paper for details of all the 
+#'  parameters.
+#' @slot results List. Estimates of cell type labels, spatial domain 
+#'   labels, and cell type composition in each spatial domain after 
+#'   post-processing the posterior samples in \code{samples}.
+#'   The list contains:
+#'   \itemize{
+#'     \item init_c: N-vector of initial cell type labels obtained using the 
+#'       method specified by \code{init_method}. Cells/spots across all tissue 
 #'       sections have been stacked into a vector.
 #'     \item init_z: N-vector of initial spatial domain labels obtained using 
 #'       the method specified by \code{init_method}. Cells/spots across all 
 #'       tissue sections have been stacked into a vector.
-#'     \item c: NxS matrix of cell type labels with cells/spots as rows and 
-#'       posterior samples as columns. Cells/spots across all tissue sections 
-#'       have been stacked into a vector.
-#'     \item init_c: N-vector of initial cell type labels obtained using the 
-#'       method specified by \code{init_method}. Cells/spots across all tissue 
-#'       sections have been stacked into a vector.
-#'     \item burninBeta: Numeric. MCMC samples of the cell-cell interaction 
-#'       parameter \code{beta}.
+#'      \item c: List. Cell type labels for each of the L tissue sections.
+#'      \item z: List. Spatial domain labels for each of the L tissue sections.
+#'      \item p: Numeric matrix. CxR matrix with the cth row and rth column 
+#'        representing the proportion of cell type c in the spatial domain r.
 #'     \item beta: Numeric. Estimate of the cell-cell interaction parameter 
 #'       \code{beta}.
-#'     \item acceptBetaP: Numeric. Acceptance rate of the Metropolis-Hastings 
-#'       algorithm for sampling the cell-cell interaction parameter \code{beta}.
-#'     \item lambda: JxS matrix with each element (j, s) representing the jth 
-#'       feature-specific scaling factor of mu_jc in the posterior sample s.
-#'     \item d: JxS matrix with each element (j, s) representing the jth 
-#'       feature-specific prior mean of mu_jc in the posterior sample s.
-#'     \item R2: Jx1 matrix of squared ranges for each expression feature.
+#'     \item loglik: log-likelihood.
 #'   }
-#'  Refer to the supplementary file of the paper for the details of all the 
-#'  parameters.
-#' @slot res_postprocess List. Estimates of cell type labels, spatial domain 
-#'   labels, and cell type composition in each spatial domain after 
-#'   post-processing the posterior samples in \code{res}. The list contains:
-#'   \itemize{
-#'      \item c_ls: List. Cell type labels for each of the L tissue sections.
-#'      \item z_ls: List. Spatial domain labels for each of the L tissue 
-#'        sections.
-#'      \item p_ls: Matrix. CxR matrix with the cth row and rth column 
-#'        representing the proportion of cell type c in the spatial domain r.
-#'   }
+#' @slot elapsed_time: Elapsed time for running MCMC in seconds.
 #'
 setClass("BASS", slots = list(
   X = "list",
@@ -119,25 +104,21 @@ setClass("BASS", slots = list(
   C = "numeric",
   R = "numeric",
   init_method = "character",
-  cov_struc = "character",
-  kappa = "numeric",
-  a = "numeric",
-  b = "numeric",
-  w0 = "numeric",
+  psi0 = "numeric",
   n0 = "numeric",
   alpha0 = "numeric",
   k = "numeric",
-  burn_in = "numeric",
-  samples = "numeric",
-  beta_est_approach = "character",
+  burnin = "numeric",
+  nsample = "numeric",
+  beta_method = "character",
   beta = "numeric",
-  beta_max = "numeric",
-  epsilon = "numeric",
-  beta_tol = "numeric",
-  B = "numeric",
-  M = "numeric",
-  res = "list",
-  res_postprocess = "list"
+  step_size = "numeric",
+  tol = "numeric",
+  potts_nsample = "numeric",
+  potts_burnin = "numeric",
+  samples = "list",
+  results = "list",
+  elapsed_time = "numeric"
   ))
 
 
@@ -159,39 +140,27 @@ setClass("BASS", slots = list(
 #' @param init_method Character. Initialize the cell type clusters and spatial 
 #'   domains with either k-means clustering (\code{kmeans}) or Gaussian mixture 
 #'   model (\code{mclust}).
-#' @param cov_struc Character. Variance-covariance structure for the gene 
-#'   expression features. \code{EEE} assumes an unstructured and common 
-#'   variance-covariance structure across cell types while \code{EII} assumes 
-#'   the same independent variance-covariance structure across cell types.
-#' @param kappa Numeric. Prior parameter in the gene expression model when 
-#'   \code{cov_struc} is set to be \code{EII}.
-#'   That is x_ij | c_i = c ~ N(mu_c, sigma2 / kappa).
-#' @param a Numeric. Shape parameter of the inverse-gamma prior on the variance 
-#'   parameter when \code{cov_struc} is set to be \code{EII}.
-#' @param b Numeric. Scale parameter of the inverse-gamma prior on the variance 
-#'   parameter when \code{cov_struc} is set to be \code{EII}.
-#' @param w0 Numeric. w0*I is the scale matrix of the inverse-Wishart prior on 
-#'   the variance-covariance matrix when \code{cov_struc} is set to be 
-#'   \code{EEE}, where I is an identity matrix.
-#' @param n0 Numeric. Degrees of freedom of the inverse-Wishart prior on the 
-#'   variance-covariance matrix when \code{cov_struc} is set to be \code{EEE}.
+#' @param psi0 Numeric. psi0*I is the scale matrix of the inv-Wishart prior on 
+#'   the variance-covariance matrix, where I is an identity matrix.
+#' @param n0 Numeric. Degrees of freedom of the inv-Wishart prior on the 
+#'   variance-covariance matrix.
 #' @param alpha0 Numeric. Concentration parameter of the Dirichlet prior  
 #'   specified on the cell type composition vector in each spatial domain.
-#' @param  k Numeric. Minimum number of neighbors for each cell/spot based on 
+#' @param k Numeric. Minimum number of neighbors for each cell/spot based on 
 #'   the Euclidean distance.
-#' @param burn_in Numeric. Number of burn-in interactions in the MCMC algorithm.
-#' @param samples Numeric. Number of posterior samples in the MCMC algorithm.
-#' @param beta_est_appraoch Character. Fix the cell-cell interaction parameter 
-#'   to be \code{beta} (\code{FIXED}) or estimate the parameter based on the 
-#'   data (\code{ACCUR_EST}) at hand.
+#' @param burnin Numeric. Number of burn-in iterations in the MCMC.
+#' @param nsample Numeric. Number of posterior samples in the MCMC.
+#' @param beta_method Character. Fix the cell-cell interaction parameter 
+#'   to be \code{beta} (\code{fix}) or estimate the parameter based on the 
+#'   data at hand (\code{SW}) .
 #' @param  beta Numeric. Pre-specified cell-cell interaction parameter if 
-#'   \code{beta_est_appraoch} is set to be \code{FIXED}.
-#' @param  beta_max Numeric. Upper bound of the cell-cell interaction parameter.
-#' @param epsilon Numeric. Step size of a uniform random walk.
-#' @param beta_tol Numeric. Threshold of convergence for the cell-cell 
-#'   interaction parameter.
-#' @param B Numeric. Number of Potts samples to approximate the partition ratio.
-#' @param M Numeric. Number of burn-in iterations in Potts sampling. 
+#'   \code{beta_method} is set to be \code{fix} or otherwise its initial value.
+#' @param step_size Numeric. Step size of a uniform random walk.
+#' @param tol Numeric. Threshold of convergence for the cell-cell interaction 
+#'   parameter.
+#' @param potts_burnin Numeric. Number of burn-in iterations in Potts sampling. 
+#' @param potts_nsample Numeric. Number of Potts samples to approximate the 
+#'   partition ratio.
 #'
 #' @return A BASS object. Refer to \linkS4class{BASS} for a complete list of
 #'   slots in the object.
@@ -200,32 +169,23 @@ setClass("BASS", slots = list(
 createBASSObject <- function(
   X, xy, C, R, 
   init_method = c("kmeans", "mclust"), 
-  cov_struc = c("EEE", "EII"),
-  kappa = 0.01, 
-  a = 0.01, 
-  b = 0.01, 
-  w0 = 1,
+  psi0 = 1,
   n0 = 1,
   alpha0 = 1, 
   k = 4, 
-  burn_in = 10000, 
-  samples = 10000, 
-  beta_est_approach = c("FIXED", "ACCUR_EST"),
+  burnin = 2000, 
+  nsample = 5000,
+  beta_method = c("SW", "fix"),
   beta = 1,
-  beta_max = 4,
-  epsilon = 0.1,
-  beta_tol = 0.1,
-  B = 100,
-  M = 100
+  step_size = 0.1,
+  tol = 1e-3,
+  potts_burnin = 10,
+  potts_nsample = 10
   )
 {
   L <- length(X)
   for(l in 1:L)
   {
-    if(!is.matrix(X[[l]])){
-      X[[l]] <- as.matrix(X[[l]])
-      cat("Expression data coerced to a matrix\n")
-    }
     if(!is.matrix(xy[[l]])){
       xy[[l]] <- as.matrix(xy[[l]])
       cat("Location data coerced to a matrix\n")
@@ -261,12 +221,10 @@ createBASSObject <- function(
   # create object
   BASS <- new(Class = "BASS", 
     X = X, xy = xy, L = L, P = P, Ns = sapply(X, ncol), C = C, R = R,
-    init_method = init_method[1], cov_struc = cov_struc[1], 
-    kappa = kappa, alpha0 = alpha0, a = a, b = b, w0 = w0, n0 = n0, 
-    k = k, burn_in = burn_in, samples = samples, 
-    beta_est_approach = beta_est_approach[1], beta = beta, 
-    beta_max = beta_max, epsilon = epsilon, beta_tol = beta_tol,
-    B = B, M = M)
+    init_method = match.arg(init_method), alpha0 = alpha0, psi0 = psi0, 
+    n0 = n0, k = k, burnin = burnin, nsample = nsample, beta = beta, 
+    beta_method = match.arg(beta_method), step_size = step_size, tol = tol,
+    potts_burnin = potts_burnin, potts_nsample = potts_nsample)
   rm(X)
   rm(xy)
   showWelcomeMessage(BASS)
@@ -284,13 +242,13 @@ showWelcomeMessage <- function(BASS)
   cat("    - Number of tissue sections:", BASS@L, "\n")
   cat("    - Number of cells/spots:", BASS@Ns, "\n")
   cat("    - Number of genes:", BASS@P, "\n")
-  cat("    - Potts interaction parameter estimation approach:", 
-    BASS@beta_est_approach, "\n")
-  if(BASS@beta_est_approach == "FIXED"){
-    cat("    - Potts interaction parameter:", BASS@beta, "\n")
+  cat("    - Potts interaction parameter estimation method:", 
+    BASS@beta_method, "\n")
+  if(BASS@beta_method == "fix"){
+    cat("      - Fix Potts interaction parameter to be:", BASS@beta, "\n")
+  } else if(BASS@beta_method == "SW"){
+    cat("      - Estimate Potts interaction parameter with SW algorithm\n")
   }
-  cat("    - Variance-covariance structure of gene expression features:",
-    BASS@cov_struc, "\n")
   cat("  To list all hyper-parameters, Type listAllHyper(BASS_object)\n")
   cat("***************************************\n")
 }
@@ -312,35 +270,27 @@ listAllHyper <- function(BASS)
   cat("    - Number of cell types C: ", BASS@C, "\n", sep = "")
   cat("    - Number of spatial domains R: ", BASS@R, "\n", sep = "")
   cat("    - Initialization method: ", BASS@init_method, "\n", sep = "")
-  cat("    - Covariance structure: ", BASS@cov_struc, "\n", sep = "")
-  if(BASS@cov_struc == "EII"){
-    cat("    - Shape parameter of the inverse-gamma prior a: ", 
-      BASS@a, "\n", sep = "")
-    cat("    - Scale parameter of the inverse-gamma prior b: ", 
-      BASS@b, "\n", sep = "")
-  } else if(BASS@cov_struc == "EEE"){
-    cat("    - Scale matrix of the inverse-Wishart prior W0: ", 
-      BASS@w0, "I", "\n", sep = "")
-    cat("    - Degrees of freedom of the inverse-Wishart prior n0: ", 
-      BASS@n0, "\n", sep = "")
-  }
-  cat("    - Number of MCMC burn-in iterations: ", BASS@burn_in, "\n", sep = "")
-  cat("    - Number of MCMC posterior samples: ", BASS@samples, "\n", sep = "")
+  cat("    - Scale matrix of the inverse-Wishart prior Psi0: ", 
+    BASS@psi0, "I", "\n", sep = "")
+  cat("    - Degrees of freedom of the inverse-Wishart prior n0: ", 
+    BASS@n0, "\n", sep = "")
+  cat("    - Number of MCMC burn-in iterations: ", BASS@burnin, "\n", sep = "")
+  cat("    - Number of MCMC posterior samples: ", BASS@nsample, "\n", sep = "")
   cat("    - Potts interaction parameter estimation approach: ", 
-    BASS@beta_est_approach, "\n", sep = "")
-  if(BASS@beta_est_approach == "FIXED"){
-    cat("    - Potts interaction parameter: ", BASS@beta, "\n", sep = "")
-  } else if(BASS@beta_est_approach == "ACCUR_EST"){
+    BASS@beta_method, "\n", sep = "")
+  if(BASS@beta_method == "fix"){
+    cat("      - Fix Potts interaction parameter to be: ", 
+      BASS@beta, "\n", sep = "")
+  } else if(BASS@beta_method == "SW"){
     cat("    - Number of burn-in interations in Potts sampling: ", 
-      BASS@B, "\n", sep = "")
+      BASS@potts_burnin, "\n", sep = "")
     cat("    - Number of Potts samples to approximate the partition ratio: ", 
-      BASS@M, "\n", sep = "")
-    cat("    - Step size of a uniform random walk epsilon: ", 
-      BASS@epsilon, "\n", sep = "")
+      BASS@potts_nsample, "\n", sep = "")
+    cat("    - Step size of a uniform random walk: ", 
+      BASS@step_size, "\n", sep = "")
     cat("    - Threshold of convergence for beta: ", 
-      BASS@beta_tol, "\n", sep = "")
+      BASS@tol, "\n", sep = "")
   }
-  cat("    - Upper bound for beta: ", BASS@beta_max, "\n", sep = "")
   cat("    - Concentration parameter of the Dirichlet prior alpha0: ", 
     BASS@alpha0, "\n", sep = "")
   cat("    - Minimum number of neighbors for each cell/spot based on the ",
@@ -456,7 +406,7 @@ BASS.preprocess <- function(
       meta_data = rep(1:BASS@L, BASS@Ns), 
       do_pca = F, verbose = F)
   }
-  BASS@X_run <- X_run
+  BASS@X_run <- t(X_run)
   return(BASS)
 }
 
@@ -471,21 +421,47 @@ BASS.preprocess <- function(
 #'   the provided \code{BASS.preprocess} function or by the users.
 #' 
 #' @return A BASS object with posterior samples of all the parameters stored in 
-#'   the \code{res} slot. Refer to \linkS4class{BASS} for details of the 
-#'   \code{res} slot and a complete list of slots in the object.
+#'   the \code{samples} slot. Refer to \linkS4class{BASS} for details of the 
+#'   \code{samples} slot and a complete list of slots in the object.
+#' @importFrom mclust Mclust mclustBIC
 #' @export
 BASS.run <- function(BASS)
 {
   xy <- do.call(rbind, BASS@xy)
-  res <- Gibbs(Xin = BASS@X_run, xy = xy, Ns = BASS@Ns, C = BASS@C, R = BASS@R,
-    initMethod = BASS@init_method, covStruc = BASS@cov_struc, 
-    kappa = BASS@kappa, alpha0 = BASS@alpha0, a = BASS@a, b = BASS@b,
-    W0in = BASS@w0 * diag(ncol(BASS@X_run)), n0 = BASS@n0, k = BASS@k, 
-    warmUp = BASS@burn_in, numSamples = BASS@samples, 
-    betaEstApproach = BASS@beta_est_approach, betaIn = BASS@beta, 
-    betaMax = BASS@beta_max, epsilon = BASS@epsilon, betaTol = BASS@beta_tol,
-    M = BASS@M, B = BASS@B)
-  BASS@res <- res
+  # initialize cell type labels, spatial domain labels, and
+  # mean parameters of gene expression features
+  if(BASS@init_method == "kmeans"){
+    km_c <- stats::kmeans(x = t(BASS@X_run), centers = BASS@C, 
+      iter.max = 100, nstart = 1000)
+    km_z <- stats::kmeans(x = t(BASS@X_run), centers = BASS@R,
+      iter.max = 100, nstart = 1000)
+    init_c <- km_c$cluster - 1
+    init_z <- km_z$cluster - 1
+    init_mu <- t(km_c$centers)
+  } else if(BASS@init_method == "mclust"){
+    mclust_c <- mclust::Mclust(data = t(BASS@X_run), G = BASS@C,
+      modelNames = "EEE", verbose = FALSE)
+    mclust_z <- mclust::Mclust(data = t(BASS@X_run), G = BASS@R,
+      modelNames = "EEE", verbose = FALSE)
+    init_c <- mclust_c$classification - 1
+    init_z <- mclust_z$classification - 1
+    init_mu <- mclust_c$parameters$mean
+  }
+  
+  output <- BASSFit(X = BASS@X_run, xy = xy, ns = BASS@Ns, 
+    C = BASS@C, R = BASS@R, k = BASS@k, alpha0 = BASS@alpha0, 
+    Psi0 = BASS@psi0 * diag(nrow(BASS@X_run)), n0 = BASS@n0,
+    burnin = BASS@burnin, nsample = BASS@nsample, method = BASS@beta_method,
+    potts_burnin = BASS@potts_burnin, potts_nsample = BASS@potts_nsample,
+    step_size = BASS@step_size, tol = BASS@tol, init_c = init_c, 
+    init_z = init_z, init_mu = init_mu, init_beta = BASS@beta)
+  
+  BASS@samples <- output[c("c", "z", "beta", "pi", "mu", "Sigma", "d", 
+    "lambda", "loglik")]
+  BASS@results[c("init_c", "init_z", "beta")] <- list(init_c, init_z, 
+    output$beta_est)
+  BASS@results["loglik"] <- mean(BASS@samples$loglik)
+  BASS@elapsed_time <- output$elapsed_time
   return(BASS)
 }
 
@@ -503,33 +479,50 @@ BASS.run <- function(BASS)
 #'
 #' @return A BASS object with the final estimates of cell type labels, spatial 
 #'   domain labels, and cell type composition in each spatial domain stored in 
-#'   the \code{res_postprocess} slot. Refer to \linkS4class{BASS} for details of 
-#'   the \code{res_postprocess} slot and a complete list of slots in the object.
+#'   the \code{results} slot. Refer to \linkS4class{BASS} for details of the 
+#'   \code{results} slot and a complete list of slots in the object.
 #' @export
 BASS.postprocess <- function(BASS)
 {
+  cat("Post-processing...\n")
   # adjust for label switching
-  c_ls <- label.switching::label.switching(method = c("ECR-ITERATIVE-1"),
-    z = t(BASS@res$c) + 1, K = BASS@C)
-  z_ls <- label.switching::label.switching(method = c("ECR-ITERATIVE-1"),
-    z = t(BASS@res$z) + 1, K = BASS@R)
+  nTypes <- max(BASS@samples$c) + 1
+  nDomains <- max(BASS@samples$z) + 1
+  if(nTypes > 1){
+    invisible(capture.output(c_ls <- label.switching::label.switching(
+      method = c("ECR-ITERATIVE-1"), z = t(BASS@samples$c) + 1, 
+      K = nTypes))) 
+  }
+  if(nDomains > 1){
+    invisible(capture.output(z_ls <- label.switching::label.switching(
+      method = c("ECR-ITERATIVE-1"), z = t(BASS@samples$z) + 1, 
+      K = nDomains)))
+  }
 
   # 1.cell type labels
-  idx_l <- c(0, cumsum(BASS@Ns))
-  c_est_ls <- c_ls$clusters[1, ]
+  section_idx <- c(0, cumsum(BASS@Ns))
+  if(nTypes > 1){
+    c_est_ls <- c_ls$clusters[1, ]
+  } else{
+    c_est_ls <- rep(1, sum(BASS@Ns))
+  }
   c_est_ls <- lapply(1:BASS@L, function(l){
-      c_est_ls[(idx_l[l]+1):idx_l[l+1]]
+      c_est_ls[(section_idx[l]+1):section_idx[l+1]]
     })
 
-  # 2.tissue structure labels
-  z_est_ls <- z_ls$clusters[1, ]
+  # 2.spatial domain labels
+  if(nDomains > 1){
+    z_est_ls <- z_ls$clusters[1, ]
+  } else{
+    z_est_ls <- rep(1, sum(BASS@Ns))
+  }
   z_est_ls <- lapply(1:BASS@L, function(l){
-      z_est_ls[(idx_l[l]+1):idx_l[l+1]]
+      z_est_ls[(section_idx[l]+1):section_idx[l+1]]
     })
 
   # 3.cell type proportion matrix
   ncell_cr <- table(unlist(c_est_ls), unlist(z_est_ls))
-  # certain tissue domains or cell types may not contain any cells
+  # certain spatial domains or cell types may not contain any cells
   r_wcell <- which(1:BASS@R %in% colnames(ncell_cr))
   c_wcell <- which(1:BASS@C %in% rownames(ncell_cr))
   pi_est_ls <- matrix(0, BASS@C, BASS@R)
@@ -538,12 +531,13 @@ BASS.postprocess <- function(BASS)
   ncell_r[ncell_r == 0] <- 1
   pi_est_ls <- pi_est_ls %*% diag(1 / ncell_r)
 
-  postprocess <- list(
-    c_ls = c_est_ls,
-    z_ls = z_est_ls,
-    pi_ls = pi_est_ls
+  results <- list(
+    c = c_est_ls,
+    z = z_est_ls,
+    pi = pi_est_ls
     )
-  BASS@res_postprocess <- postprocess
+  BASS@results[c("c", "z", "pi")] <- results
+  cat("done\n")
   return(BASS)
 }
 
