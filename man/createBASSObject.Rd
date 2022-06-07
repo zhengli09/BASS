@@ -16,7 +16,7 @@ createBASSObject(
   k = 4,
   burnin = 2000,
   nsample = 5000,
-  beta_method = c("fix", "SW"),
+  beta_method = c("SW", "fix"),
   beta = 1,
   step_size = 0.1,
   tol = 0.001,

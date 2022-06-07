@@ -4,10 +4,15 @@
 \alias{BASS.postprocess}
 \title{Post-process the posterior sampling results}
 \usage{
-BASS.postprocess(BASS)
+BASS.postprocess(BASS, adjustLS = TRUE)
 }
 \arguments{
 \item{BASS}{A BASS object output from \code{BASS.run}.}
+
+\item{adjustLS}{Logical. Adjust for label switching using the ECR-1 
+algorithm (TRUE) or directly use the posterior mode of cell type or 
+spatial domain labels as the final estimates without adjusting for label 
+switching (FALSE).}
 }
 \value{
 A BASS object with the final estimates of cell type labels, spatial 

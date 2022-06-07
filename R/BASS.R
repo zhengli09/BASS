@@ -476,50 +476,70 @@ BASS.run <- function(BASS)
 #' estimates of cell type and spatial domain labels.
 #'   
 #' @param BASS A BASS object output from \code{BASS.run}.
+#' @param adjustLS Logical. Adjust for label switching using the ECR-1 
+#'   algorithm (TRUE) or directly use the posterior mode of cell type or 
+#'   spatial domain labels as the final estimates without adjusting for label 
+#'   switching (FALSE).
 #'
 #' @return A BASS object with the final estimates of cell type labels, spatial 
 #'   domain labels, and cell type composition in each spatial domain stored in 
 #'   the \code{results} slot. Refer to \linkS4class{BASS} for details of the 
 #'   \code{results} slot and a complete list of slots in the object.
 #' @export
-BASS.postprocess <- function(BASS)
+BASS.postprocess <- function(BASS, adjustLS = TRUE)
 {
   cat("Post-processing...\n")
-  # adjust for label switching
-  nTypes <- max(BASS@samples$c) + 1
-  nDomains <- max(BASS@samples$z) + 1
-  if(nTypes > 1){
-    invisible(capture.output(c_ls <- label.switching::label.switching(
-      method = c("ECR-ITERATIVE-1"), z = t(BASS@samples$c) + 1, 
-      K = nTypes))) 
-  }
-  if(nDomains > 1){
-    invisible(capture.output(z_ls <- label.switching::label.switching(
-      method = c("ECR-ITERATIVE-1"), z = t(BASS@samples$z) + 1, 
-      K = nDomains)))
-  }
+  if(adjustLS){ # adjust for label switching
+    nTypes <- max(BASS@samples$c) + 1
+    nDomains <- max(BASS@samples$z) + 1
+    if(nTypes > 1){
+      invisible(capture.output(c_ls <- label.switching::label.switching(
+        method = c("ECR-ITERATIVE-1"), z = t(BASS@samples$c) + 1, 
+        K = nTypes))) 
+    }
+    if(nDomains > 1){
+      invisible(capture.output(z_ls <- label.switching::label.switching(
+        method = c("ECR-ITERATIVE-1"), z = t(BASS@samples$z) + 1, 
+        K = nDomains)))
+    }
 
-  # 1.cell type labels
-  section_idx <- c(0, cumsum(BASS@Ns))
-  if(nTypes > 1){
-    c_est_ls <- c_ls$clusters[1, ]
-  } else{
-    c_est_ls <- rep(1, sum(BASS@Ns))
-  }
-  c_est_ls <- lapply(1:BASS@L, function(l){
+    # 1.cell type labels
+    section_idx <- c(0, cumsum(BASS@Ns))
+    if(nTypes > 1){
+      c_est_ls <- c_ls$clusters[1, ]
+    } else{
+      c_est_ls <- rep(1, sum(BASS@Ns))
+    }
+    c_est_ls <- lapply(1:BASS@L, function(l){
+        c_est_ls[(section_idx[l]+1):section_idx[l+1]]
+      })
+
+    # 2.spatial domain labels
+    if(nDomains > 1){
+      z_est_ls <- z_ls$clusters[1, ]
+    } else{
+      z_est_ls <- rep(1, sum(BASS@Ns))
+    }
+    z_est_ls <- lapply(1:BASS@L, function(l){
+        z_est_ls[(section_idx[l]+1):section_idx[l+1]]
+      })
+  } else{ # use posterior mode
+    getmode <- function(v)
+    {
+      uniqv <- unique(v)
+      uniqv[which.max(tabulate(match(v, uniqv)))]
+    }
+    c_est_ls <- apply(BASS@samples$c, MARGIN = 1, getmode) + 1
+    z_est_ls <- apply(BASS@samples$z, MARGIN = 1, getmode) + 1
+    section_idx <- c(0, cumsum(BASS@Ns))
+    c_est_ls <- lapply(1:BASS@L, function(l){
       c_est_ls[(section_idx[l]+1):section_idx[l+1]]
     })
-
-  # 2.spatial domain labels
-  if(nDomains > 1){
-    z_est_ls <- z_ls$clusters[1, ]
-  } else{
-    z_est_ls <- rep(1, sum(BASS@Ns))
-  }
-  z_est_ls <- lapply(1:BASS@L, function(l){
+    z_est_ls <- lapply(1:BASS@L, function(l){
       z_est_ls[(section_idx[l]+1):section_idx[l+1]]
     })
-
+  }
+  
   # 3.cell type proportion matrix
   ncell_cr <- table(unlist(c_est_ls), unlist(z_est_ls))
   # certain spatial domains or cell types may not contain any cells
