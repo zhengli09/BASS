@@ -3,6 +3,7 @@
 // Purpose:
 // BASS implementation
 
+#define ARMA_64BIT_WORD 1
 #include "Potts.h"
 #include <RcppDist.h>
 using namespace Rcpp;

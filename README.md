@@ -51,6 +51,9 @@ Visit our [group website](http://www.xzlab.org) for more statistical tools on
 analyzing spatial transcriptomic data.
 
 ## Release Notes
+### Latest:
+* (`v1.1.0.014`) Enabled ARMA_64BIT_WORD such that sp_mat can handle large 
+matrices
 ### v1.1.0:
 * Changed functional programming to OO programming
 * Optimized the implementation for Swendsen-Wang algorithm

@@ -17,7 +17,7 @@ Description: BASS is a method for multi-scale and multi-sample analysis in
     BASS is capable of multi-sample analysis that jointly models multiple
     tissue sections/samples, facilitating the integration of spatial
     transcriptomic data across tissue samples.
-License: GPL (>= 2)
+License: GPL (>= 3)
 Depends: 
     GIGrvg,
     R (>= 4.0.3)
