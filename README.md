@@ -43,9 +43,10 @@ If you find the `BASS` package, any of the source code, or processed data
 in this repository and in the [BASS-analysis](https://github.com/zhengli09/BASS-Analysis) 
 repository useful for your work, please cite:
 
-> Zheng Li, Xiang Zhou# (2022). Multi-scale and multi-sample analysis enables 
+> Li, Z., Zhou, X. BASS: multi-scale and multi-sample analysis enables 
 > accurate cell type clustering and spatial domain detection in spatial 
-> transcriptomic studies. Under revision.
+> transcriptomic studies. Genome Biol 23, 168 (2022). 
+> https://doi.org/10.1186/s13059-022-02734-7
 
 Visit our [group website](http://www.xzlab.org) for more statistical tools on 
 analyzing spatial transcriptomic data.
