@@ -1,6 +1,6 @@
 Package: BASS
 Title: Bayesian Analytics for Spatial Segmentation
-Version: 1.1.0
+Version: 1.1.0.016
 Date: 2022-05-31
 Authors@R: c(
     person("Zheng", "Li", role = c("aut", "cre"), email = "zlisph@umich.edu"),

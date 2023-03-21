@@ -53,6 +53,7 @@ analyzing spatial transcriptomic data.
 
 ## Release Notes
 ### Latest:
+* (`v1.1.0.016`) Fixed a bug in `BASS.preprocess` related to `HarmonyMatrix`
 * (`v1.1.0.014`) Enabled ARMA_64BIT_WORD such that sp_mat can handle large 
 matrices
 ### v1.1.0:

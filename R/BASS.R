@@ -403,7 +403,7 @@ BASS.preprocess <- function(
     cat("***** Correct batch effect with Harmony *****\n")
     X_run <- harmony::HarmonyMatrix(
       data_mat = X_run,
-      meta_data = rep(1:BASS@L, BASS@Ns), 
+      meta_data = as.character(rep(1:BASS@L, BASS@Ns)), 
       do_pca = F, verbose = F)
   }
   BASS@X_run <- t(X_run)
