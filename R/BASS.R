@@ -401,10 +401,10 @@ BASS.preprocess <- function(
   # 4.Batch effect correction
   if(doBatchCorrect & BASS@L > 1){
     cat("***** Correct batch effect with Harmony *****\n")
-    X_run <- harmony::HarmonyMatrix(
+    X_run <- harmony::RunHarmony(
       data_mat = X_run,
       meta_data = as.character(rep(1:BASS@L, BASS@Ns)), 
-      do_pca = F, verbose = F)
+      verbose = F)
   }
   BASS@X_run <- t(X_run)
   return(BASS)

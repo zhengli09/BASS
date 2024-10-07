@@ -1,6 +1,6 @@
 Package: BASS
 Title: Bayesian Analytics for Spatial Segmentation
-Version: 1.1.0.016
+Version: 1.1.0.017
 Date: 2022-05-31
 Authors@R: c(
     person("Zheng", "Li", role = c("aut", "cre"), email = "zlisph@umich.edu"),
@@ -24,7 +24,7 @@ Depends:
 Imports: 
     GIGrvg (>= 0.5),
     Matrix (>= 1.3.4),
-    harmony (>= 0.1.0),
+    harmony (>= 1.2.1),
     label.switching (>= 1.8),
     mclust (>= 5.4.7),
     Rcpp (>= 1.0.8),
