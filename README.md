@@ -38,6 +38,8 @@ library(BASS)
 ## How to use `BASS`
 Check our [vignettes](https://zhengli09.github.io/BASS-Analysis/).
 
+Note: The use of `harmony` was updated in `v1.1.0.017`, which results in slight differences in the processed data after batch effect removal. To fully reproduce the results shown in the tutorial, please refer to the [previous version](https://github.com/zhengli09/BASS/commit/37980c94a99f4b01ad5fa63555b3c5ab8af82b7e) of BASS.
+
 ## Citing the work
 If you find the `BASS` package, any of the source code, or processed data 
 in this repository and in the [BASS-analysis](https://github.com/zhengli09/BASS-Analysis) 
